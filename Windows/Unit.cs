@@ -61,6 +61,7 @@ namespace TBS
 		public UnitType UType { get; private set; }
 		public Weapon MainWeapon { get; private set; }
 		public Weapon SecondaryWeapon { get; private set; }
+		public Building Capturing { get; private set; }
 
 		public Unit(string type, int movingDistance, int visionDistance, Player player,
 					Vector2 position, bool canCapture, int price, int ammo, int range, int gas,
@@ -83,33 +84,22 @@ namespace TBS
 			UType = unitType;
 			MainWeapon = weapon1;
 			SecondaryWeapon = weapon2;
+			Capturing = null;
 		}
 
 		public void Move(Vector2 position)
 		{
 			if (Moved)
 				return;
+			if (Capturing != null && position != Position)
+				Capturing.StopCapture();
 			Position = position;
 			Moved = true;
 		}
 
-		public int WeightFromType(int type)
+		public int WeightFromType(Terrain terrain)
 		{
-			if (type == 0 && (MovementType == MoveType.Infantry || MovementType == MoveType.Bazooka || MovementType == MoveType.Tank || MovementType == MoveType.TireA || MovementType == MoveType.TireB))
-				return -1;
-			var ret = -1;
-			if (MovementType == MoveType.Air)
-				ret = 1;
-			else
-				switch (type)
-				{
-					case 0: ret = 1; break;
-					case 1: ret = 1; break;
-					case 2: ret = 1; break;
-					case 3: ret = 2; break;
-					case 4: ret = 3; break;
-				}
-			return Math.Min(ret, MovingDistance);
+			return Math.Min(terrain.MoveCosts[MovementType], MovingDistance);
 		}
 
 		public void Attack(Unit other)
@@ -118,6 +108,18 @@ namespace TBS
 			var ol = other.Life;
 			other.Life -= Life / 2;
 			Life -= ol / 3;
+		}
+
+		public void Capture(Building target)
+		{
+			target.Capture(this);
+			Capturing = target;
+			Moved = true;
+		}
+
+		public void Heal(int number = 2)
+		{
+			Life = Math.Min(10, Life + 2);
 		}
 	}
 }

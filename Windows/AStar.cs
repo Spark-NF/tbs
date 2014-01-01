@@ -26,7 +26,7 @@ namespace TBS
 		private readonly List<Node> _openList = new List<Node>();
 		private readonly List<Node> _closedList = new List<Node>();
 
-		public AStar(int[,] map, List<Unit> units, Unit unit)
+		public AStar(Terrain[,] map, List<Unit> units, Unit unit)
 		{
 			_levelWidth = map.GetLength(1);
 			_levelHeight = map.GetLength(0);
@@ -39,7 +39,7 @@ namespace TBS
 				   Math.Abs(point1.Y - point2.Y);
 		}
 
-		private void InitializeSearchNodes(int[,] map, List<Unit> units, Unit unit)
+		private void InitializeSearchNodes(Terrain[,] map, List<Unit> units, Unit unit)
 		{
 			_searchNodes = new Node[_levelHeight, _levelWidth];
 			for (var y = 0; y < _levelHeight; y++)

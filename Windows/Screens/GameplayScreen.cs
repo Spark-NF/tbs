@@ -33,7 +33,8 @@ namespace TBS
 		private readonly Vector2 _nullCursor;
 
 		private Sprite _cursor, _move;
-	    private Sprite[] _texturesTerrains, _texturesBuildings;
+	    private Sprite[] _texturesBuildings;
+	    private Terrain[] _terrains;
 		private Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
 		private Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
 		private SpriteFont _font, _fontDebug, _fontLife;
@@ -44,7 +45,7 @@ namespace TBS
 
 		private Vector2 _camera;
 		private Player[] _players;
-		private int[,] _mapTerrains;
+		private Terrain[,] _mapTerrains;
 		private bool[,] _availableMoves;
 		private Building[,] _mapBuildings;
 		private List<Unit> _units;
@@ -59,9 +60,6 @@ namespace TBS
 		private TimeSpan _fpsElapsed = TimeSpan.Zero;
 		private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
 
-	    /// <summary>
-        /// Constructor.
-        /// </summary>
         public GameplayScreen()
         {
             TransitionOnTime = TimeSpan.FromSeconds(1.5);
@@ -73,16 +71,30 @@ namespace TBS
 				new Player(1, false),
 				new Player(2, true)
 			};
-			_mapTerrains = new[,]
+			var terrain = new[,]
 			{
-				{ 0, 0, 0, 0, 0, 0, 0 },
-				{ 0, 1, 1, 1, 1, 1, 0 },
-				{ 0, 1, 3, 3, 3, 1, 0 },
-				{ 0, 1, 3, 4, 3, 1, 0 },
-				{ 0, 1, 3, 3, 3, 1, 0 },
-				{ 0, 1, 2, 2, 2, 1, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0 }
+				{ 6, 6, 6, 6, 6, 6, 6 },
+				{ 6, 0, 0, 0, 0, 0, 6 },
+				{ 6, 0, 2, 2, 2, 0, 6 },
+				{ 6, 0, 2, 3, 2, 0, 6 },
+				{ 6, 0, 2, 2, 2, 0, 6 },
+				{ 6, 0, 1, 1, 1, 0, 6 },
+				{ 6, 6, 6, 6, 6, 6, 6 }
 			};
+		    _terrains = new[]
+		    {
+			    new Terrain("Plains", 1, 1, 1, 2, 1, 1, 1, -1, -1),
+			    new Terrain("Road", 0, 1, 1, 1, 1, 1, 1, -1, -1),
+			    new Terrain("Wood", 3, 1, 1, 3, 3, 2, 1, -1, -1),
+			    new Terrain("Mountain", 4, 2, 1, -1, -1, -1, 1, -1, -1),
+			    new Terrain("Wasteland", 2, 1, 1, 3, 3, 2, 1, -1, -1),
+			    new Terrain("Ruins", 1, 1, 1, 2, 1, 1, 1, -1, -1),
+			    new Terrain("Sea", 0, -1, -1, -1, -1, -1, 1, 1, 1)
+		    };
+		    _mapTerrains = new Terrain[7, 7];
+			for (var y = 0; y < _mapTerrains.GetLength(1); ++y)
+				for (var x = 0; x < _mapTerrains.GetLength(0); ++x)
+					_mapTerrains[y, x] = _terrains[terrain[y, x]];
 			_availableMoves = new bool[7, 7];
 			_mapBuildings = new Building[7, 7];
 			_mapBuildings[1, 1] = new Building(0, _players[0]);
@@ -113,14 +125,13 @@ namespace TBS
 
 			_cursor = new Sprite(_content.Load<Texture2D>("Cursor"), 1, 2);
 			_move = new Sprite(_content.Load<Texture2D>("Move"));
-			_texturesTerrains = new[]
-			{
-				new Sprite(_content.Load<Texture2D>("Terrains/Water")),
-				new Sprite(_content.Load<Texture2D>("Terrains/Grass")),
-				new Sprite(_content.Load<Texture2D>("Terrains/Road")),
-				new Sprite(_content.Load<Texture2D>("Terrains/Forest")),
-				new Sprite(_content.Load<Texture2D>("Terrains/Mountain"))
-			};
+	        _terrains[0].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Plains"));
+	        _terrains[1].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Road"));
+	        _terrains[2].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Wood"));
+	        _terrains[3].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Mountain"));
+	        _terrains[4].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Wasteland"));
+	        _terrains[5].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Ruins"));
+	        _terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Sea"));
 			_texturesBuildings = new[]
 			{
 				new Sprite(_content.Load<Texture2D>("Buildings/Headquarters"), 5, 2),
@@ -181,8 +192,8 @@ namespace TBS
 			}
 
 			// Update textures for animations
-			for (var i = 0; i < _texturesTerrains.GetLength(0); ++i)
-				_texturesTerrains[i].Update(gameTime);
+			for (var i = 0; i < _terrains.GetLength(0); ++i)
+				_terrains[i].Texture.Update(gameTime);
 			for (var i = 0; i < _texturesBuildings.GetLength(0); ++i)
 				_texturesBuildings[i].Update(gameTime);
 			for (var i = 0; i < _texturesUnitsBig.Count; ++i)
@@ -238,8 +249,7 @@ namespace TBS
 					{
 						_selectedUnit.Move(_cursorPos);
 						_availableMoves = new bool[7, 7];
-						var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
-						buildingUnder.Player = _selectedUnit.Player;
+						_selectedUnit.Capture(_mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X]);
 						_selectedUnit = null;
 					}
 					else if (selected == "Wait")
@@ -250,14 +260,7 @@ namespace TBS
 					}
 					else if (selected == "End turn")
 					{
-						_currentPlayer++;
-						if (_currentPlayer > _players.Length)
-						{
-							_currentPlayer = 1;
-							_turn++;
-						}
-						_players[_currentPlayer - 1].NextTurn();
-						_showContextMenu = false;
+						NextTurn();
 						return;
 					}
 			    }
@@ -304,10 +307,10 @@ namespace TBS
 				        }
 		        }
 				else if (!oldShow && Souris.Get().Clicked(MouseButton.Left) && _selectedUnit != null && !_selectedUnit.Moved && _availableMoves[(int)_cursorPos.Y, (int)_cursorPos.X])
-		        {
+				{
+					var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
 			        if (unitUnder == null)
 			        {
-				        var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
 						if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
 							SetContextMenu("Capture", "Move", "Cancel");
 						else
@@ -316,10 +319,15 @@ namespace TBS
 			        else if (unitUnder.Player != _selectedUnit.Player)
 				        SetContextMenu("Attack", "Cancel");
 			        else if (unitUnder == _selectedUnit)
-				        SetContextMenu("Wait", "Cancel");
+			        {
+				        if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
+							SetContextMenu("Capture", "Wait", "Cancel");
+				        else
+					        SetContextMenu("Wait", "Cancel");
+			        }
 			        else if (unitUnder.Type == _selectedUnit.Type)
 				        SetContextMenu("Merge", "Cancel");
-		        }
+				}
 				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left) && unitUnder == null)
 				{
 					if (_selectedUnit != null)
@@ -386,12 +394,12 @@ namespace TBS
 			// Draw terrain
 			for (var y = 0; y < _mapTerrains.GetLength(0); ++y)
 				for (var x = 0; x < _mapTerrains.GetLength(1); ++x)
-					_texturesTerrains[_mapTerrains[y, x]].Draw(
+					_mapTerrains[y, x].Texture.Draw(
 						spriteBatch,
 						y / 100f,
 						new Vector2(
 							32 * x - _camera.X,
-							32 * y - _camera.Y));
+							32 * y - _camera.Y + 32 - _mapTerrains[y, x].Texture.Height));
 
 			// Draw available displacements
 			if (_selectedUnit != null && !_selectedUnit.Moved)
@@ -400,7 +408,7 @@ namespace TBS
 						if (_availableMoves[y, x])
 							_move.Draw(
 								spriteBatch,
-								y / 100f + 0.005f,
+								0.8f,
 								new Vector2(
 									32 * x - _camera.X,
 									32 * y - _camera.Y));
@@ -409,15 +417,20 @@ namespace TBS
 			for (var y = 0; y < _mapTerrains.GetLength(0); ++y)
 				for (var x = 0; x < _mapTerrains.GetLength(1); ++x)
 					if (_mapBuildings[y, x] != null)
+					{
+						var pos = new Vector2(
+							32 * x - _camera.X + 4,
+							32 * y - _texturesBuildings[_mapBuildings[y, x].Type].Height + 32 - _camera.Y);
 						_texturesBuildings[_mapBuildings[y, x].Type].Draw(
 							spriteBatch,
 							y / 100f + 0.003f,
-							new Vector2(
-								32 * x - _camera.X + 4,
-								32 * y - _texturesBuildings[_mapBuildings[y, x].Type].Height + 32 - _camera.Y),
+							pos,
 							_mapBuildings[y, x].Player == null ? 0 : _mapBuildings[y, x].Player.Number);
+						if (_mapBuildings[y, x].CaptureStatus < 20)
+							spriteBatch.DrawString(_fontLife, "" + _mapBuildings[y, x].CaptureStatus, pos + new Vector2(16, 6), Color.Blue, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
+					}
 
-			// Draw units
+	        // Draw units
 	        foreach (var u in _units)
 	        {
 		        _texturesUnitsBig[u.Type].Draw(
@@ -518,6 +531,7 @@ namespace TBS
 		    _contextMenus = menus;
 		    _showContextMenu = true;
 			_contextMenuPos = new Point(Souris.Get().X + (int)_camera.X, Souris.Get().Y + (int)_camera.Y);
+
 		    _contextMaxWidth = 0;
 			foreach (var m in menus)
 		    {
@@ -525,6 +539,30 @@ namespace TBS
 				if (len > _contextMaxWidth)
 				    _contextMaxWidth = len;
 		    }
+	    }
+
+	    private void NextTurn()
+	    {
+			_currentPlayer++;
+		    if (_currentPlayer > _players.Length)
+		    {
+			    _currentPlayer = 1;
+			    _turn++;
+		    }
+
+		    for (var y = 0; y < _mapTerrains.GetLength(0); ++y)
+				for (var x = 0; x < _mapTerrains.GetLength(1); ++x)
+					if (_mapBuildings[y, x] != null)
+						_mapBuildings[y, x].NextTurn();
+
+			foreach (var u in _units.Where(u => 
+					u.Player.Number == _currentPlayer
+					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X] != null
+					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X].Player == u.Player))
+				u.Heal();
+
+			_players[_currentPlayer - 1].NextTurn();
+			_showContextMenu = false;
 	    }
     }
 }

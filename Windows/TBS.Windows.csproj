@@ -58,6 +58,7 @@
     <Compile Include="Souris.cs" />
     <Compile Include="Sprite.cs" />
     <Compile Include="Static.cs" />
+    <Compile Include="Terrain.cs" />
     <Compile Include="Unit.cs" />
     <Compile Include="UnitCreator.cs" />
   </ItemGroup>
@@ -105,19 +106,25 @@
     <None Include="Content\Move.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\Terrains\Forest.xnb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Content\Terrains\Grass.xnb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Content\Terrains\Mountain.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Terrains\Plains.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Terrains\Road.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\Terrains\Water.xnb">
+    <None Include="Content\Terrains\Ruins.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Terrains\Sea.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Terrains\Wasteland.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Terrains\Wood.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Units\15375.xnb" />
