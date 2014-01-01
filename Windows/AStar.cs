@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace TBS
@@ -14,6 +15,7 @@ namespace TBS
 		public bool InClosedList;
 		public float DistanceToGoal;
 		public float DistanceTraveled;
+		public bool Occupied;
 	}
 
 	class AStar
@@ -24,11 +26,11 @@ namespace TBS
 		private readonly List<Node> _openList = new List<Node>();
 		private readonly List<Node> _closedList = new List<Node>();
 
-		public AStar(int[,] map, Unit unit)
+		public AStar(int[,] map, List<Unit> units, Unit unit)
 		{
 			_levelWidth = map.GetLength(1);
 			_levelHeight = map.GetLength(0);
-			InitializeSearchNodes(map, unit);
+			InitializeSearchNodes(map, units, unit);
 		}
 
 		private float Heuristic(Point point1, Point point2)
@@ -37,7 +39,7 @@ namespace TBS
 				   Math.Abs(point1.Y - point2.Y);
 		}
 
-		private void InitializeSearchNodes(int[,] map, Unit unit)
+		private void InitializeSearchNodes(int[,] map, List<Unit> units, Unit unit)
 		{
 			_searchNodes = new Node[_levelHeight, _levelWidth];
 			for (var y = 0; y < _levelHeight; y++)
@@ -47,7 +49,8 @@ namespace TBS
 					var node = new Node
 					{
 						Position = new Point(x, y),
-						Weight = unit.WeightFromType(map[y, x])
+						Weight = unit.WeightFromType(map[y, x]),
+						Occupied = units.Any(u => u.Player != unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y)
 					};
 					if (node.Weight < 0)
 						continue;
@@ -60,7 +63,7 @@ namespace TBS
 				for (var x = 0; x < _levelWidth; x++)
 				{
 					var node = _searchNodes[x, y];
-					if (node == null || node.Weight < 0)
+					if (node == null || node.Weight < 0 || node.Occupied)
 						continue;
 					var neighbors = new[]
 					{

@@ -33,8 +33,10 @@ namespace TBS
 		private readonly Vector2 _nullCursor;
 
 		private Sprite _cursor, _move;
-		private Sprite[] _texturesTerrains, _texturesBuildings, _texturesUnitsSmall, _texturesUnitsBig;
-		private SpriteFont _font, _fontDebug;
+	    private Sprite[] _texturesTerrains, _texturesBuildings;
+		private Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
+		private Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
+		private SpriteFont _font, _fontDebug, _fontLife;
 		private Vector2 _cursorPos;
 		private Unit _selectedUnit;
 		private int _currentPlayer;
@@ -89,10 +91,10 @@ namespace TBS
 			_mapBuildings[1, 5] = new Building(1, null);
 			_units = new List<Unit>
 			{
-				UnitCreator.Unit(0, _players[0], new Vector2(2, 1)),
-				UnitCreator.Unit(1, _players[0], new Vector2(1, 2)),
-				UnitCreator.Unit(2, _players[1], new Vector2(5, 4)),
-				UnitCreator.Unit(3, _players[1], new Vector2(4, 5))
+				UnitCreator.Unit("Infantry", _players[0], new Vector2(2, 1)),
+				UnitCreator.Unit("Mech", _players[0], new Vector2(1, 2)),
+				UnitCreator.Unit("Bike", _players[1], new Vector2(5, 4)),
+				UnitCreator.Unit("Battle Copter", _players[1], new Vector2(4, 5))
 			};
 			_camera = new Vector2(-50, -80);
 			_turn = 1;
@@ -124,22 +126,16 @@ namespace TBS
 				new Sprite(_content.Load<Texture2D>("Buildings/Headquarters"), 5, 2),
 				new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 2)
 			};
-			_texturesUnitsSmall = new[]
-			{
-				new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Small/FightHeli"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Small/TransHeli"), 3, 3, 200)
-			};
-			_texturesUnitsBig = new[]
-			{
-				new Sprite(_content.Load<Texture2D>("Units/Big/Inf1"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Big/Bazooka1"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 3, 3, 200),
-				new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 3, 3, 200)
-			};
+	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 3, 3, 200));
+	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 3, 3, 200));
+			_texturesUnitsSmall.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 3, 3, 200));
+			_texturesUnitsSmall.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Small/FightHeli"), 3, 3, 200));
+			_texturesUnitsSmall.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Small/TransHeli"), 3, 3, 200));
+	        _texturesUnitsBig.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Big/Inf1"), 3, 3, 200));
+			_texturesUnitsBig.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Big/Bazooka1"), 3, 3, 200));
+			_texturesUnitsBig.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 3, 3, 200));
+			_texturesUnitsBig.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 3, 3, 200));
+			_texturesUnitsBig.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 3, 3, 200));
 			_font = _content.Load<SpriteFont>("Fonts/Game");
 			_fontDebug = _content.Load<SpriteFont>("Fonts/Debug");
 
@@ -180,7 +176,18 @@ namespace TBS
 			    _fpsElapsed -= TimeSpan.FromSeconds(1);
 			    _fpsFrameRate = _fpsFrameCounter;
 			    _fpsFrameCounter = 0;
-		    }
+			}
+
+			// Update textures for animations
+			for (var i = 0; i < _texturesTerrains.GetLength(0); ++i)
+				_texturesTerrains[i].Update(gameTime);
+			for (var i = 0; i < _texturesBuildings.GetLength(0); ++i)
+				_texturesBuildings[i].Update(gameTime);
+			for (var i = 0; i < _texturesUnitsBig.Count; ++i)
+				_texturesUnitsBig.Values.ElementAt(i).Update(gameTime);
+			for (var i = 0; i < _texturesUnitsSmall.Count; ++i)
+				_texturesUnitsSmall.Values.ElementAt(i).Update(gameTime);
+			_cursor.Update(gameTime);
 
 		    // Hide context menu
 		    var oldShow = _showContextMenu;
@@ -194,6 +201,14 @@ namespace TBS
 					{
 						_selectedUnit.Move(_cursorPos);
 						_availableMoves = new bool[7, 7];
+						_selectedUnit = null;
+					}
+					else if (selected == "Capture")
+					{
+						_selectedUnit.Move(_cursorPos);
+						_availableMoves = new bool[7, 7];
+						var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
+						buildingUnder.Player = _selectedUnit.Player;
 						_selectedUnit = null;
 					}
 					else if (selected == "Wait")
@@ -211,6 +226,8 @@ namespace TBS
 							_turn++;
 						}
 						_players[_currentPlayer - 1].NextTurn();
+						_showContextMenu = false;
+						return;
 					}
 			    }
 				_showContextMenu = false;
@@ -248,7 +265,7 @@ namespace TBS
 			        _selectedUnit = unitUnder;
 			        _availableMoves = new bool[7, 7];
 			        _availableMoves[(int)_selectedUnit.Position.Y, (int)_selectedUnit.Position.X] = true;
-			        var pf = new AStar(_mapTerrains, _selectedUnit);
+			        var pf = new AStar(_mapTerrains, _units, _selectedUnit);
 			        for (var y = (int)Math.Max(_selectedUnit.Position.Y - _selectedUnit.MovingDistance, 0); y <= (int)Math.Min(_selectedUnit.Position.Y + _selectedUnit.MovingDistance, _mapTerrains.GetLength(1) - 1); ++y)
 				        for (var x = (int)Math.Max(_selectedUnit.Position.X - _selectedUnit.MovingDistance, 0); x <= (int)Math.Min(_selectedUnit.Position.X + _selectedUnit.MovingDistance, _mapTerrains.GetLength(0) - 1); ++x)
 				        {
@@ -260,13 +277,19 @@ namespace TBS
 				else if (!oldShow && Souris.Get().Clicked(MouseButton.Left) && _selectedUnit != null && !_selectedUnit.Moved && _availableMoves[(int)_cursorPos.Y, (int)_cursorPos.X])
 		        {
 			        if (unitUnder == null)
-						SetContextMenu("Move", "Cancel");
-					else if (unitUnder.Player != _selectedUnit.Player)
-						SetContextMenu("Attack", "Cancel");
-					else if (unitUnder == _selectedUnit)
-						SetContextMenu("Wait", "Cancel");
-					else if (unitUnder.Type == _selectedUnit.Type)
-						SetContextMenu("Merge", "Cancel");
+			        {
+				        var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
+						if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
+							SetContextMenu("Capture", "Move", "Cancel");
+						else
+							SetContextMenu("Move", "Cancel");
+			        }
+			        else if (unitUnder.Player != _selectedUnit.Player)
+				        SetContextMenu("Attack", "Cancel");
+			        else if (unitUnder == _selectedUnit)
+				        SetContextMenu("Wait", "Cancel");
+			        else if (unitUnder.Type == _selectedUnit.Type)
+				        SetContextMenu("Merge", "Cancel");
 		        }
 				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left) && unitUnder == null)
 				{
@@ -276,17 +299,6 @@ namespace TBS
 						SetContextMenu("End turn");
 				}
 	        }
-
-	        // Update textures for animations
-	        for (var i = 0; i < _texturesTerrains.GetLength(0); ++i)
-		        _texturesTerrains[i].Update(gameTime);
-	        for (var i = 0; i < _texturesBuildings.GetLength(0); ++i)
-		        _texturesBuildings[i].Update(gameTime);
-	        for (var i = 0; i < _texturesUnitsBig.GetLength(0); ++i)
-		        _texturesUnitsBig[i].Update(gameTime);
-	        for (var i = 0; i < _texturesUnitsSmall.GetLength(0); ++i)
-		        _texturesUnitsSmall[i].Update(gameTime);
-	        _cursor.Update(gameTime);
         }
 
 
@@ -377,16 +389,20 @@ namespace TBS
 							_mapBuildings[y, x].Player == null ? 0 : _mapBuildings[y, x].Player.Number);
 
 			// Draw units
-			foreach (var t in _units)
-				_texturesUnitsBig[t.Type].Draw(
-					spriteBatch,
-					t.Position.Y / 100f + 0.006f,
-					32 * t.Position - _camera - new Vector2(0, 4),
-					0,
-					t.Moved && t.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
-					t.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
+	        foreach (var u in _units)
+	        {
+		        _texturesUnitsBig[u.Type].Draw(
+			        spriteBatch,
+			        u.Position.Y / 100f + 0.006f,
+			        32 * u.Position - _camera - new Vector2(0, 4),
+			        0,
+			        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
+			        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
+				if (u.Life < 10)
+					spriteBatch.DrawString(_fontLife, "" + u.Life, 32 * u.Position - _camera - new Vector2(16, 24), Color.White);
+	        }
 
-			// User Interface
+	        // User Interface
 			spriteBatch.DrawString(_font, "Day " + _turn, new Vector2(13, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
 			spriteBatch.DrawString(_font, "Day " + _turn, new Vector2(12, 8), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
 			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 205, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);

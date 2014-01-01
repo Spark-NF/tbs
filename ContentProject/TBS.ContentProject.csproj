@@ -48,7 +48,7 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\Microsoft.Xna.GameStudio.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(ProjectDir)bin\PSM\Content" "$(SolutionDir)TBS\Content" /S</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(ProjectDir)bin\PSM\Content" "$(SolutionDir)Windows\Content" /S</PostBuildEvent>
   </PropertyGroup>
   <!--
       To modify your build process, add your task inside one of the targets below and uncomment it. 
