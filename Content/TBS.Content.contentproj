@@ -37,17 +37,6 @@
     <MonoGamePlatform>PSM</MonoGamePlatform>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.EffectImporter" />
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.FBXImporter" />
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.TextureImporter" />
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.XImporter" />
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.AudioImporters" />
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.VideoImporters" />
-    <Reference Include="MonoGameContentProcessors">
-      <HintPath>$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGameContentProcessors.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Buildings\Headquarters.png">
       <Name>Headquarters</Name>
       <Importer>TextureImporter</Importer>
