@@ -1,0 +1,13 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+*.cachefile
+*.user
+*.db
+/GameName1/GameName1Content/obj
+/GameName1/GameName1/bin/PSM
+/GameName1/GameName1/obj/PSM
+/TBS/bin/Windows/Debug
+/TBS/obj/x86/Debug
+*.suo
