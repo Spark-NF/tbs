@@ -136,8 +136,10 @@ namespace TBS
 			_texturesUnitsBig.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 3, 3, 200));
 			_texturesUnitsBig.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 3, 3, 200));
 			_texturesUnitsBig.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 3, 3, 200));
+
 			_font = _content.Load<SpriteFont>("Fonts/Game");
 			_fontDebug = _content.Load<SpriteFont>("Fonts/Debug");
+			_fontLife = _content.Load<SpriteFont>("Fonts/Life");
 
 			GC.Collect();
             ScreenManager.Game.ResetElapsedTime();
@@ -203,6 +205,35 @@ namespace TBS
 						_availableMoves = new bool[7, 7];
 						_selectedUnit = null;
 					}
+					else if (selected == "Attack")
+					{
+						var pf = new AStar(_mapTerrains, _units, _selectedUnit);
+						var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point((int)_cursorPos.X, (int)_cursorPos.Y));
+						if (nodes != null && nodes.Count > 1)
+						{
+							_selectedUnit.Move(new Vector2(nodes[nodes.Count - 2].Position.X, nodes[nodes.Count - 2].Position.Y));
+							_availableMoves = new bool[7, 7];
+						}
+						_selectedUnit.Moved = true;
+						var unitUnder = _units.FirstOrDefault(t =>
+							Math.Abs(t.Position.X - _cursorPos.X) < 0.1
+							&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
+						if (unitUnder != null)
+						{
+							_selectedUnit.Attack(unitUnder);
+							if (_selectedUnit.Life <= 0)
+							{
+								_units.Remove(_selectedUnit);
+								_selectedUnit.Player.Units.Remove(_selectedUnit);
+							}
+							if (unitUnder.Life <= 0)
+							{
+								_units.Remove(unitUnder);
+								unitUnder.Player.Units.Remove(unitUnder);
+							}
+						}
+						_selectedUnit = null;
+					}
 					else if (selected == "Capture")
 					{
 						_selectedUnit.Move(_cursorPos);
@@ -255,11 +286,9 @@ namespace TBS
 		    // Mouse click
 	        if (Souris.Get().Clicked(MouseButton.Left) && _cursorPos != _nullCursor)
 	        {
-		        Unit unitUnder = null;
-		        foreach (var t in _units.Where(t =>
-			        Math.Abs(t.Position.X - _cursorPos.X) < 0.1
-			        && Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1))
-			        unitUnder = t;
+				var unitUnder = _units.FirstOrDefault(t =>
+					Math.Abs(t.Position.X - _cursorPos.X) < 0.1
+					&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
 		        if (Souris.Get().Clicked(MouseButton.Left) && (_selectedUnit == null || _selectedUnit.Moved) && unitUnder != null && !unitUnder.Moved && unitUnder.Player.Number == _currentPlayer)
 		        {
 			        _selectedUnit = unitUnder;
@@ -399,7 +428,7 @@ namespace TBS
 			        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
 			        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
 				if (u.Life < 10)
-					spriteBatch.DrawString(_fontLife, "" + u.Life, 32 * u.Position - _camera - new Vector2(16, 24), Color.White);
+					spriteBatch.DrawString(_fontLife, "" + u.Life, 32 * u.Position - _camera + new Vector2(20, 20), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
 	        }
 
 	        // User Interface

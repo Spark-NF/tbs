@@ -115,8 +115,9 @@ namespace TBS
 		public void Attack(Unit other)
 		{
 			Ammo--;
-			Life -= other.Life / 3;
-			other.Life -= 4;
+			var ol = other.Life;
+			other.Life -= Life / 2;
+			Life -= ol / 3;
 		}
 	}
 }

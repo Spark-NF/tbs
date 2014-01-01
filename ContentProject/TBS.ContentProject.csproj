@@ -45,6 +45,13 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Content\TBS.Content.contentproj">
+      <Project>{9491FAB1-17D3-4116-8AC7-BDCF5F608086}</Project>
+      <Name>TBS.Content %28Content%29</Name>
+      <XnaReferenceType>Content</XnaReferenceType>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\Microsoft.Xna.GameStudio.targets" />
   <PropertyGroup>
