@@ -51,26 +51,6 @@
       <Importer>TextureImporter</Importer>
       <Processor>MGTextureProcessor</Processor>
     </Compile>
-    <Compile Include="Cursor.png">
-      <Name>Cursor</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Terrains\Mountain.png">
-      <Name>Mountain</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Terrains\Road.png">
-      <Name>Road</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Units\15375.png">
-      <Name>15375</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
     <Compile Include="Units\Big\Bazooka1.png">
       <Name>Bazooka1</Name>
       <Importer>TextureImporter</Importer>
@@ -167,13 +147,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Move.png">
-      <Name>Move</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Fonts\Debug.spritefont">
       <Name>Debug</Name>
       <Importer>FontDescriptionImporter</Importer>
@@ -210,40 +183,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Terrains\Plains.png">
-      <Name>Plains</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Terrains\Ruins.png">
-      <Name>Ruins</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Terrains\Sea.png">
-      <Name>Sea</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Terrains\Wasteland.png">
-      <Name>Wasteland</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-    <Compile Include="Terrains\Wood.png">
-      <Name>Wood</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Attack.png">
-      <Name>Attack</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Units\Small\Artillery.png">
       <Name>Artillery</Name>
       <Importer>TextureImporter</Importer>
@@ -253,6 +192,159 @@
   <ItemGroup>
     <Compile Include="Units\Big\Artillery.png">
       <Name>Artillery</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Units\Preview\Artillery.png">
+      <Name>Artillery</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\Bazooka1.png">
+      <Name>Bazooka1</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\Bazooka2.png">
+      <Name>Bazooka2</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\FightHeli.png">
+      <Name>FightHeli</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\Inf1.png">
+      <Name>Inf1</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\Inf2.png">
+      <Name>Inf2</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\Moto1.png">
+      <Name>Moto1</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\Moto2.png">
+      <Name>Moto2</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Units\Preview\TransHeli.png">
+      <Name>TransHeli</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Terrains\Big\Mountain.png">
+      <Name>Mountain</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Plains.png">
+      <Name>Plains</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Road.png">
+      <Name>Road</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Ruins.png">
+      <Name>Ruins</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Sea.png">
+      <Name>Sea</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Wasteland.png">
+      <Name>Wasteland</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Wood.png">
+      <Name>Wood</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Mountain.png">
+      <Name>Mountain</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Plains.png">
+      <Name>Plains</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Road.png">
+      <Name>Road</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Ruins.png">
+      <Name>Ruins</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Sea.png">
+      <Name>Sea</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Wasteland.png">
+      <Name>Wasteland</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Wood.png">
+      <Name>Wood</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Terrains\Big\Attack.png">
+      <Name>Attack</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Cursor.png">
+      <Name>Cursor</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Big\Move.png">
+      <Name>Move</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Terrains\Medium\Attack.png">
+      <Name>Attack</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Cursor.png">
+      <Name>Cursor</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>MGTextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Terrains\Medium\Move.png">
+      <Name>Move</Name>
       <Importer>TextureImporter</Importer>
       <Processor>MGTextureProcessor</Processor>
     </Compile>

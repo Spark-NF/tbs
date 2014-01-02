@@ -33,7 +33,7 @@ namespace TBS
 			InitializeSearchNodes(map, units, unit);
 		}
 
-		private float Heuristic(Point point1, Point point2)
+		private static float Heuristic(Point point1, Point point2)
 		{
 			return Math.Abs(point1.X - point2.X) +
 				   Math.Abs(point1.Y - point2.Y);
@@ -50,7 +50,7 @@ namespace TBS
 					{
 						Position = new Point(x, y),
 						Weight = unit.WeightFromType(map[y, x]),
-						Occupied = units.Any(u => u.Player != unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y)
+						Occupied = units != null && units.Any(u => u.Player != unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y)
 					};
 					if (node.Weight < 0)
 						continue;
@@ -144,7 +144,7 @@ namespace TBS
 			return finalPath;
 		}
 
-		public List<Node> FindPath(Point startPoint, Point endPoint)
+		public List<Node> FindPath(Point startPoint, Point endPoint, int initialDistance = 0)
 		{
 			if (startPoint == endPoint)
 				return null;
@@ -155,7 +155,7 @@ namespace TBS
 
 			startNode.InOpenList = true;
 			startNode.DistanceToGoal = Heuristic(startPoint, endPoint);
-			startNode.DistanceTraveled = 0;
+			startNode.DistanceTraveled = initialDistance;
 			_openList.Add(startNode);
 
 			while (_openList.Count > 0)

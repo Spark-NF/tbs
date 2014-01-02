@@ -1,4 +1,6 @@
-﻿namespace TBS
+﻿using System;
+
+namespace TBS
 {
 	class Building
 	{
@@ -32,13 +34,14 @@
 		public void Capture(Unit capturing)
 		{
 			_previousCaptureStatus = CaptureStatus;
-			CaptureStatus -= capturing.Life;
-			if (CaptureStatus <= 0)
-			{
-				Player = capturing.Player;
-				_previousCaptureStatus = 20;
-				CaptureStatus = 20;
-			}
+			CaptureStatus -= (int)Math.Ceiling((double)capturing.Life / 10);
+
+			if (CaptureStatus > 0)
+				return;
+
+			Player = capturing.Player;
+			_previousCaptureStatus = 20;
+			CaptureStatus = 20;
 		}
 		public void StopCapture()
 		{
@@ -48,11 +51,11 @@
 
 		public void NextTurn()
 		{
-			if (CaptureStatus == _previousCaptureStatus)
-			{
-				_previousCaptureStatus = 20;
-				CaptureStatus = 20;
-			}
+			if (CaptureStatus != _previousCaptureStatus)
+				return;
+
+			_previousCaptureStatus = 20;
+			CaptureStatus = 20;
 		}
 	}
 }

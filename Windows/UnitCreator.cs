@@ -8,6 +8,7 @@ namespace TBS
 	class UnitCreator
 	{
 		private static readonly Dictionary<string, XElement> Units = new Dictionary<string, XElement>();
+		private static readonly Dictionary<Tuple<string, string>, int> DamageChart = new Dictionary<Tuple<string, string>, int>();
 
 		public static void Initialize()
 		{
@@ -18,6 +19,37 @@ namespace TBS
 			var units = root.Elements();
 			foreach (var u in units)
 				Units.Add(u.Attribute("Name").Value, u);
+
+			DamageChart.Add(new Tuple<string, string>("Infantry", "Infantry"), 55);
+			DamageChart.Add(new Tuple<string, string>("Infantry", "Mech"), 45);
+			DamageChart.Add(new Tuple<string, string>("Infantry", "Bike"), 45);
+			DamageChart.Add(new Tuple<string, string>("Infantry", "Artillery"), 10);
+			DamageChart.Add(new Tuple<string, string>("Infantry", "Battle Copter"), 8);
+			DamageChart.Add(new Tuple<string, string>("Mech", "Infantry"), 65);
+			DamageChart.Add(new Tuple<string, string>("Mech", "Mech"), 55);
+			DamageChart.Add(new Tuple<string, string>("Mech", "Bike"), 55);
+			DamageChart.Add(new Tuple<string, string>("Mech", "Artillery"), 70);
+			DamageChart.Add(new Tuple<string, string>("Mech", "Battle Copter"), 12);
+			DamageChart.Add(new Tuple<string, string>("Bike", "Infantry"), 65);
+			DamageChart.Add(new Tuple<string, string>("Bike", "Mech"), 55);
+			DamageChart.Add(new Tuple<string, string>("Bike", "Bike"), 55);
+			DamageChart.Add(new Tuple<string, string>("Bike", "Artillery"), 15);
+			DamageChart.Add(new Tuple<string, string>("Bike", "Battle Copter"), 12);
+			DamageChart.Add(new Tuple<string, string>("Artillery", "Infantry"), 90);
+			DamageChart.Add(new Tuple<string, string>("Artillery", "Mech"), 85);
+			DamageChart.Add(new Tuple<string, string>("Artillery", "Bike"), 85);
+			DamageChart.Add(new Tuple<string, string>("Artillery", "Artillery"), 75);
+			DamageChart.Add(new Tuple<string, string>("Artillery", "Battle Copter"), -1);
+			DamageChart.Add(new Tuple<string, string>("Battle Copter", "Infantry"), 75);
+			DamageChart.Add(new Tuple<string, string>("Battle Copter", "Mech"), 65);
+			DamageChart.Add(new Tuple<string, string>("Battle Copter", "Bike"), 65);
+			DamageChart.Add(new Tuple<string, string>("Battle Copter", "Artillery"), 64);
+			DamageChart.Add(new Tuple<string, string>("Battle Copter", "Battle Copter"), 65);
+		}
+
+		public static int Damage(Unit u1, Unit u2)
+		{
+			return DamageChart[new Tuple<string, string>(u1.Type, u2.Type)];
 		}
 
 		public static Unit Unit(string type, Player player, Vector2 position)

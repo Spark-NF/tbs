@@ -24,8 +24,10 @@ namespace TBS.Screens
 
 		private Sprite _cursor, _move, _attack;
 	    private Sprite[] _texturesBuildings;
+	    private int _gridWidth, _gridHeight;
 	    private readonly Terrain[] _terrains;
 		private readonly Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
+		private readonly Dictionary<string, Sprite> _texturesUnitsPreview = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
 		private SpriteFont _font, _fontDebug, _fontLife;
 		private Vector2 _cursorPos;
@@ -38,7 +40,7 @@ namespace TBS.Screens
 		private readonly Player[] _players;
 		private readonly Terrain[,] _mapTerrains;
 		private bool[,] _availableMoves;
-		private bool[,] _availableAttacks;
+		private int[,] _availableAttacks;
 		private readonly Building[,] _mapBuildings;
 		private readonly List<Unit> _units;
 	    private Unit _attacksShowing;
@@ -52,7 +54,7 @@ namespace TBS.Screens
 		private int _fpsFrameCounter;
 		private TimeSpan _fpsElapsed = TimeSpan.Zero;
 		private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
-	    private List<Node> _movePath;
+		private List<Node> _movePath;
 
 	    public GameplayScreen()
         {
@@ -92,7 +94,7 @@ namespace TBS.Screens
 				for (var x = 0; x < _mapTerrains.GetLength(0); ++x)
 					_mapTerrains[y, x] = _terrains[lines[y][x] - '0'];
 			_availableMoves = new bool[_mapHeight, _mapWidth];
-			_availableAttacks = new bool[_mapHeight, _mapWidth];
+			_availableAttacks = new int[_mapHeight, _mapWidth];
 			_mapBuildings = new Building[_mapHeight, _mapWidth];
 			_mapBuildings[1, 1] = new Building(0, _players[0]);
 			_mapBuildings[5, 5] = new Building(0, _players[1]);
@@ -120,34 +122,43 @@ namespace TBS.Screens
             if (_content == null)
 				_content = new ContentManager(ScreenManager.Game.Services, "Content");
 
-			_cursor = new Sprite(_content.Load<Texture2D>("Cursor"), 1, 2);
-			_move = new Sprite(_content.Load<Texture2D>("Move"));
-			_attack = new Sprite(_content.Load<Texture2D>("Attack"));
+			_cursor = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Cursor"), 1, 2);
+			_move = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Move"));
+			_attack = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Attack"));
 
-	        _terrains[0].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Plains"));
-	        _terrains[1].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Road"));
-	        _terrains[2].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Wood"));
-	        _terrains[3].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Mountain"));
-	        _terrains[4].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Wasteland"));
-	        _terrains[5].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Ruins"));
-	        _terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Sea"));
+	        _terrains[0].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Plains"));
+			_terrains[1].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Road"));
+			_terrains[2].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Wood"));
+			_terrains[3].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Mountain"));
+			_terrains[4].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Wasteland"));
+			_terrains[5].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Ruins"));
+			_terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Sea"));
+			_gridWidth = _terrains[0].Texture.Texture.Width;
+			_gridHeight = _terrains[0].Texture.Texture.Width;
+
 			_texturesBuildings = new[]
 			{
 				new Sprite(_content.Load<Texture2D>("Buildings/Headquarters"), 5, 2),
 				new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 2)
 			};
-	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 3, 3, 200));
-	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 3, 3, 200));
-			_texturesUnitsSmall.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 3, 3, 200));
-			_texturesUnitsSmall.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 3, 3, 200));
-			_texturesUnitsSmall.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Small/FightHeli"), 3, 3, 200));
-			_texturesUnitsSmall.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Small/TransHeli"), 3, 3, 200));
-	        _texturesUnitsBig.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Big/Inf1"), 3, 3, 200));
-			_texturesUnitsBig.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Big/Bazooka1"), 3, 3, 200));
-			_texturesUnitsBig.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 3, 3, 200));
-			_texturesUnitsBig.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 3, 3, 200));
-			_texturesUnitsBig.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 3, 3, 200));
-			_texturesUnitsBig.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 3, 3, 200));
+	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 6, 3, 200));
+	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 6, 3, 200));
+			_texturesUnitsSmall.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 6, 3, 200));
+			_texturesUnitsSmall.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 6, 3, 200));
+			_texturesUnitsSmall.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Small/FightHeli"), 6, 3, 200));
+			_texturesUnitsSmall.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Small/TransHeli"), 6, 3, 200));
+			_texturesUnitsPreview.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Preview/Inf1"), 2, 3, 400));
+			_texturesUnitsPreview.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Preview/Bazooka1"), 2, 3, 400));
+			_texturesUnitsPreview.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Preview/Moto1"), 2, 3, 400));
+			_texturesUnitsPreview.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Preview/Artillery"), 2, 3, 400));
+			_texturesUnitsPreview.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Preview/FightHeli"), 2, 3, 400));
+			_texturesUnitsPreview.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Preview/TransHeli"), 2, 3, 400));
+			_texturesUnitsBig.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Big/Inf1"), 6, 3, 200));
+			_texturesUnitsBig.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Big/Bazooka1"), 6, 3, 200));
+			_texturesUnitsBig.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 6, 3, 200));
+			_texturesUnitsBig.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 6, 3, 200));
+			_texturesUnitsBig.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 6, 3, 200));
+			_texturesUnitsBig.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 6, 3, 200));
 
 			_font = _content.Load<SpriteFont>("Fonts/Game");
 			_fontDebug = _content.Load<SpriteFont>("Fonts/Debug");
@@ -199,6 +210,8 @@ namespace TBS.Screens
 				_texturesBuildings[i].Update(gameTime);
 			for (var i = 0; i < _texturesUnitsBig.Count; ++i)
 				_texturesUnitsBig.Values.ElementAt(i).Update(gameTime);
+			for (var i = 0; i < _texturesUnitsPreview.Count; ++i)
+				_texturesUnitsPreview.Values.ElementAt(i).Update(gameTime);
 			for (var i = 0; i < _texturesUnitsSmall.Count; ++i)
 				_texturesUnitsSmall.Values.ElementAt(i).Update(gameTime);
 			_cursor.Update(gameTime);
@@ -221,11 +234,9 @@ namespace TBS.Screens
 					}
 					else if (selected == "Attack")
 					{
-						var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-						var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point((int)_cursorPos.X, (int)_cursorPos.Y));
-						if (nodes != null && nodes.Count > 1)
+						if (_movePath != null && _movePath.Count > 1)
 						{
-							_selectedUnit.Move(new Vector2(nodes[nodes.Count - 2].Position.X, nodes[nodes.Count - 2].Position.Y));
+							_selectedUnit.Move(new Vector2(_movePath[_movePath.Count - 2].Position.X, _movePath[_movePath.Count - 2].Position.Y));
 							_availableMoves = new bool[_mapHeight, _mapWidth];
 						}
 						_selectedUnit.Moved = true;
@@ -234,7 +245,7 @@ namespace TBS.Screens
 							&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
 						if (unitUnder != null)
 						{
-							_selectedUnit.Attack(unitUnder);
+							_selectedUnit.Attack(unitUnder, _mapTerrains);
 							if (_selectedUnit.Life <= 0)
 								_units.Remove(_selectedUnit);
 							if (unitUnder.Life <= 0)
@@ -268,7 +279,7 @@ namespace TBS.Screens
 			// Update cursor position
 	        if (!_showContextMenu)
 	        {
-		        var curPos = new Vector2((int)((Souris.Get().X + _camera.X) / 32), (int)((Souris.Get().Y + _camera.Y) / 32));
+		        var curPos = new Vector2((int)((Souris.Get().X + _camera.X) / _gridWidth), (int)((Souris.Get().Y + _camera.Y) / _gridHeight));
 		        _cursorPos = Souris.Get().X + _camera.X >= 0 && Souris.Get().Y + _camera.Y >= 0
 		                     && curPos.X < _mapTerrains.GetLength(0) && curPos.Y < _mapTerrains.GetLength(1)
 						   ? curPos
@@ -278,7 +289,7 @@ namespace TBS.Screens
 			// Right click
 		    if (_attacksShowing != null && !Souris.Get().Pressed(MouseButton.Right))
 			{
-				_availableAttacks = new bool[_mapHeight, _mapWidth];
+				_availableAttacks = new int[_mapHeight, _mapWidth];
 				_attacksShowing = null;
 		    }
 		    else if (Souris.Get().Clicked(MouseButton.Right))
@@ -293,40 +304,56 @@ namespace TBS.Screens
 					if (unitUnder != null)
 					{
 						_attacksShowing = unitUnder;
-						_availableAttacks = new bool[_mapHeight, _mapWidth];
-						var pf = new AStar(_mapTerrains, _units, unitUnder);
-						for (var y = (int)Math.Max(unitUnder.Position.Y - unitUnder.MovingDistance, 0); y <= (int)Math.Min(unitUnder.Position.Y + unitUnder.MovingDistance, _mapTerrains.GetLength(1) - 1); ++y)
-							for (var x = (int)Math.Max(unitUnder.Position.X - unitUnder.MovingDistance, 0); x <= (int)Math.Min(unitUnder.Position.X + unitUnder.MovingDistance, _mapTerrains.GetLength(0) - 1); ++x)
-							{
-								var nodes = pf.FindPath(new Point((int)unitUnder.Position.X, (int)unitUnder.Position.Y), new Point(x, y));
-								if ((nodes == null || !nodes.Any()
-										|| !(nodes.Last().DistanceTraveled <= unitUnder.MovingDistance)
-										|| !unitUnder.CanMoveAndAttack()) && (y != (int)unitUnder.Position.Y || x != (int)unitUnder.Position.X))
-									continue;
-								if (nodes != null && nodes.Any() && nodes.Last().Occupied)
-									continue;
-								for (var iy = Math.Max(y - unitUnder.RangeMax, 0); iy <= Math.Min(y + unitUnder.RangeMax, _mapTerrains.GetLength(1) - 1); ++iy)
-									for (var ix = Math.Max(x - unitUnder.RangeMax, 0); ix <= Math.Min(x + unitUnder.RangeMax, _mapTerrains.GetLength(0) - 1); ++ix)
-									{
-										if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unitUnder.RangeMax
-										    && Math.Abs(y - iy) + Math.Abs(x - ix) >= unitUnder.RangeMin)
-											_availableAttacks[iy, ix] = true;
-									}
-							}
+						SetAvailableAttacks(unitUnder);
 					}
 					else
-					    _selectedUnit = null;
-			    }
+					{
+						_selectedUnit = null;
+						_movePath = null;
+						_availableMoves = null;
+					}
+				}
 		    }
 
 			// Possible path to mouse
 		    if (_selectedUnit != null && !_selectedUnit.Moved && _cursorPos != _nullCursor)
 		    {
-			    var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-				var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point((int)_cursorPos.X, (int)_cursorPos.Y));
-			    if (nodes != null && nodes.Any())
-				    _movePath = nodes;
-		    }
+			    var init = new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y);
+			    if (_movePath != null && _movePath.Any())
+				{
+					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
+				    var nodes = pf.FindPath(
+						_movePath.Last().Position,
+						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
+						(int)_movePath.Last().DistanceTraveled);
+				    if (nodes != null && nodes.Any())
+				    {
+					    if (nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
+					    {
+						    nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
+							if (nodes != null && nodes.Any() &&
+								(nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
+								|| nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
+								   && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
+								_movePath = nodes;
+					    }
+					    else
+						    _movePath.AddRange(nodes);
+				    }
+				    else
+						_movePath = nodes;
+			    }
+				if (_movePath == null || !_movePath.Any())
+				{
+					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
+					var nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
+					if (nodes != null && nodes.Any() &&
+						(nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
+						|| nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
+						   && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
+						_movePath = nodes;
+			    }
+			}
 
 		    // Mouse click
 			if (Souris.Get().Clicked(MouseButton.Left) && _cursorPos != _nullCursor && !noSelect)
@@ -337,6 +364,7 @@ namespace TBS.Screens
 		        if (Souris.Get().Clicked(MouseButton.Left) && (_selectedUnit == null || _selectedUnit.Moved) && unitUnder != null && !unitUnder.Moved && unitUnder.Player.Number == _currentPlayer)
 		        {
 			        _selectedUnit = unitUnder;
+					SetAvailableAttacks(unitUnder);
 					_availableMoves = new bool[_mapHeight, _mapWidth];
 			        _availableMoves[(int)_selectedUnit.Position.Y, (int)_selectedUnit.Position.X] = true;
 			        var pf = new AStar(_mapTerrains, _units, _selectedUnit);
@@ -348,7 +376,9 @@ namespace TBS.Screens
 						        _availableMoves[y, x] = true;
 				        }
 		        }
-				else if (!oldShow && Souris.Get().Clicked(MouseButton.Left) && _selectedUnit != null && !_selectedUnit.Moved && _availableMoves[(int)_cursorPos.Y, (int)_cursorPos.X])
+				else if (!oldShow && Souris.Get().Clicked(MouseButton.Left)
+					&& _selectedUnit != null && !_selectedUnit.Moved
+					&& (_availableMoves[(int)_cursorPos.Y, (int)_cursorPos.X] || _availableAttacks[(int)_cursorPos.Y, (int)_cursorPos.X] == 2))
 				{
 					var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
 			        if (unitUnder == null)
@@ -373,7 +403,10 @@ namespace TBS.Screens
 				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left) && unitUnder == null)
 				{
 					if (_selectedUnit != null)
+					{
 						_selectedUnit = null;
+						_movePath = null;
+					}
 					else
 						SetContextMenu("End turn");
 				}
@@ -434,59 +467,62 @@ namespace TBS.Screens
 			spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend);
 
 			// Draw terrain
-			for (var y = 0; y < _mapTerrains.GetLength(0); ++y)
-				for (var x = 0; x < _mapTerrains.GetLength(1); ++x)
+			for (var y = 0; y < _mapHeight; ++y)
+				for (var x = 0; x < _mapWidth; ++x)
 					_mapTerrains[y, x].Texture.Draw(
 						spriteBatch,
 						y / 100f,
 						new Vector2(
-							32 * x - _camera.X,
-							32 * y - _camera.Y + 32 - _mapTerrains[y, x].Texture.Height));
+							_gridWidth * x - _camera.X,
+							_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height));
 
 			// Draw available displacements
 			if (_selectedUnit != null && !_selectedUnit.Moved)
-				for (var y = 0; y < _availableMoves.GetLength(0); ++y)
-					for (var x = 0; x < _availableMoves.GetLength(1); ++x)
+				for (var y = 0; y < _mapHeight; ++y)
+					for (var x = 0; x < _mapWidth; ++x)
 						if (_availableMoves[y, x])
 							_move.Draw(
 								spriteBatch,
 								0.80f,
 								new Vector2(
-									32 * x - _camera.X,
-									32 * y - _camera.Y));
+									_gridWidth * x - _camera.X,
+									_gridHeight * y - _camera.Y));
 
 			// Draw available attacks
-			if (_attacksShowing != null)
-				for (var y = 0; y < _availableAttacks.GetLength(0); ++y)
-					for (var x = 0; x < _availableAttacks.GetLength(1); ++x)
-						if (_availableAttacks[y, x] && (_selectedUnit != _attacksShowing || _selectedUnit != null && _selectedUnit.Moved || !_availableMoves[y, x]))
-							_attack.Draw(
-								spriteBatch,
-								0.81f,
-								new Vector2(
-									32 * x - _camera.X,
-									32 * y - _camera.Y));
-
-			// Draw current moving path
-			if (_movePath != null && _selectedUnit != null)
-				foreach (var n in _movePath)
-					if (_availableMoves[n.Position.Y, n.Position.X])
+			for (var y = 0; y < _mapHeight; ++y)
+				for (var x = 0; x < _mapWidth; ++x)
+					if (_attacksShowing != null && _availableAttacks[y, x] != 0 && (_selectedUnit != _attacksShowing || _selectedUnit != null && _selectedUnit.Moved || !_availableMoves[y, x])
+						|| _selectedUnit != null && _availableAttacks[y, x] == 2)
 						_attack.Draw(
 							spriteBatch,
-							0.82f,
+							0.81f,
 							new Vector2(
-								32 * n.Position.X - _camera.X,
-								32 * n.Position.Y - _camera.Y));
+								_gridWidth * x - _camera.X,
+								_gridHeight * y - _camera.Y));
+
+			// Draw current moving path
+	        if (_movePath != null && _selectedUnit != null)
+			{
+				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
+		        foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X]))
+			        _attack.Draw(
+				        spriteBatch,
+				        0.82f,
+				        new Vector2(
+							_gridWidth * n.Position.X - _camera.X,
+							_gridHeight * n.Position.Y - _camera.Y));
+	        }
 
 			// Draw buildings
-			for (var y = 0; y < _mapTerrains.GetLength(0); ++y)
-				for (var x = 0; x < _mapTerrains.GetLength(1); ++x)
+			for (var y = 0; y < _mapHeight; ++y)
+				for (var x = 0; x < _mapWidth; ++x)
 					if (_mapBuildings[y, x] != null)
 					{
+						var texture = _texturesBuildings[_mapBuildings[y, x].Type];
 						var pos = new Vector2(
-							32 * x - _camera.X + 4,
-							32 * y - _texturesBuildings[_mapBuildings[y, x].Type].Height + 32 - _camera.Y);
-						_texturesBuildings[_mapBuildings[y, x].Type].Draw(
+							_gridWidth * x - _camera.X + (int)Math.Floor((double)(_gridWidth + texture.Width) / 2) - _gridWidth,
+							_gridHeight * y - texture.Height + _gridHeight - _camera.Y);
+						texture.Draw(
 							spriteBatch,
 							y / 100f + 0.003f,
 							pos,
@@ -498,15 +534,30 @@ namespace TBS.Screens
 	        // Draw units
 	        foreach (var u in _units)
 	        {
-		        _texturesUnitsBig[u.Type].Draw(
-			        spriteBatch,
-			        u.Position.Y / 100f + 0.006f,
-			        32 * u.Position - _camera - new Vector2(0, 4),
-			        0,
-			        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
-			        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
-				if (u.Life < 10)
-					spriteBatch.DrawString(_fontLife, "" + u.Life, 32 * u.Position - _camera + new Vector2(20, 20), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
+		        if (u == _selectedUnit)
+		        {
+			        var texture = _texturesUnitsBig[u.Type];
+					var pos = _gridWidth * u.Position - _camera - new Vector2(
+						(int)Math.Floor((double)(_gridWidth + texture.Width) / 2) - _gridWidth,
+						texture.Height - _gridHeight);
+			        texture.Draw(
+				        spriteBatch,
+				        u.Position.Y / 100f + 0.006f,
+						pos,
+				        3 * (u.Player.Number - 1),
+				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
+				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
+		        }
+		        else
+			        _texturesUnitsPreview[u.Type].Draw(
+				        spriteBatch,
+				        u.Position.Y / 100f + 0.006f,
+				        _gridWidth * u.Position - _camera,
+				        u.Player.Number - 1,
+				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
+				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
+		        if (u.Life <= 90)
+					spriteBatch.DrawString(_fontLife, "" + Math.Ceiling((double)u.Life / 10), _gridWidth * u.Position - _camera + new Vector2(_gridWidth - 6, _gridHeight - 11), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
 	        }
 
 	        // User Interface
@@ -547,13 +598,13 @@ namespace TBS.Screens
 
 			// FPS Counter
 			_fpsFrameCounter++;
-			var str = string.Format(string.Format("fps: {0} mem: {1} cam: ({2},{3})", _fpsFrameRate, GC.GetTotalMemory(false), _camera.X, _camera.Y), _fpsFrameRate, GC.GetTotalMemory(false));
+			var str = string.Format("fps: {0} mem: {1} cam: ({2},{3}) trv: {4}", _fpsFrameRate, GC.GetTotalMemory(false), _camera.X, _camera.Y, _movePath != null && _movePath.Any() ? _movePath.Last().DistanceTraveled : -1);
 			spriteBatch.DrawString(_fontDebug, str, new Vector2(13, graphics.Viewport.Height - 27), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.999f);
 			spriteBatch.DrawString(_fontDebug, str, new Vector2(12, graphics.Viewport.Height - 28), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
 
 			// Cursor
 			if (_cursorPos != _nullCursor)
-				_cursor.Draw(spriteBatch, 0.899f, _cursorPos * 32 - _camera);
+				_cursor.Draw(spriteBatch, 0.899f, _cursorPos * _gridWidth - _camera);
 
 			spriteBatch.End();
 
@@ -628,6 +679,39 @@ namespace TBS.Screens
 
 			_players[_currentPlayer - 1].NextTurn();
 			_showContextMenu = false;
+	    }
+
+	    private void SetAvailableAttacks(Unit unit)
+		{
+			_availableAttacks = new int[_mapHeight, _mapWidth];
+			var pf = new AStar(_mapTerrains, _units, unit);
+			for (var y = (int)Math.Max(unit.Position.Y - unit.MovingDistance, 0);
+				y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapTerrains.GetLength(1) - 1);
+				++y)
+				for (var x = (int)Math.Max(unit.Position.X - unit.MovingDistance, 0);
+					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapTerrains.GetLength(0) - 1);
+					++x)
+				{
+					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y));
+					if ((nodes == null || !nodes.Any()
+						 || !(nodes.Last().DistanceTraveled <= unit.MovingDistance)
+						 || !unit.CanMoveAndAttack()) && (y != (int)unit.Position.Y || x != (int)unit.Position.X))
+						continue;
+					if (nodes != null && nodes.Any() && nodes.Last().Occupied)
+						continue;
+					var ymin = Math.Max(y - unit.RangeMax, 0);
+					var ymax = Math.Min(y + unit.RangeMax, _mapTerrains.GetLength(1) - 1);
+					var xmin = Math.Max(x - unit.RangeMax, 0);
+					var xmax = Math.Min(x + unit.RangeMax, _mapTerrains.GetLength(0) - 1);
+					for (var iy = ymin; iy <= ymax; ++iy)
+						for (var ix = xmin; ix <= xmax; ++ix)
+							if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unit.RangeMax && Math.Abs(y - iy) + Math.Abs(x - ix) >= unit.RangeMin)
+								_availableAttacks[iy, ix] = _units.Any(t =>
+										t.Player != unit.Player
+										&& Math.Abs(t.Position.X - ix) < 0.1
+										&& Math.Abs(t.Position.Y - iy) < 0.1)
+									? 2 : 1;
+				}
 	    }
     }
 }

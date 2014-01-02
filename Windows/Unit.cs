@@ -80,7 +80,7 @@ namespace TBS
 			RangeMin = rangeMin;
 			RangeMax = rangeMax;
 			Gas = gas;
-			Life = 10;
+			Life = 100;
 			MovementType = moveType;
 			UType = unitType;
 			MainWeapon = weapon1;
@@ -108,17 +108,26 @@ namespace TBS
 			return Math.Min(terrain.MoveCosts[MovementType], MovingDistance);
 		}
 
-		public void Attack(Unit other)
+		public void Attack(Unit other, Terrain[,] map, bool counter = true)
 		{
-			Ammo--;
-			var ol = other.Life;
-			other.Life -= Life / 2;
-			Life -= ol / 3;
+			if (MainWeapon != Weapon.None)
+				Ammo--;
 
-			if (other.Life <= 0)
-				other.Die();
-			if (Life <= 0)
-				Die();
+			if (MainWeapon != Weapon.None && Ammo > 0 || SecondaryWeapon != Weapon.None)
+			{
+				var basedamage = UnitCreator.Damage(this, other);
+				if (basedamage >= 0)
+				{
+					other.Life -= (int)(basedamage
+					                    * (Math.Ceiling((double)Life / 10f) / 10f)
+					                    * ((100f + 0f) / (100f + 0f)));
+					if (other.Life <= 0)
+						other.Die();
+				}
+			}
+
+			if (counter)
+				other.Attack(this, map, false);
 		}
 
 		public void Die()
@@ -135,9 +144,9 @@ namespace TBS
 			Moved = true;
 		}
 
-		public void Heal(int number = 2)
+		public void Heal(int number = 20)
 		{
-			Life = Math.Min(10, Life + 2);
+			Life = Math.Min(100, Life + number);
 		}
 	}
 }
