@@ -30,7 +30,7 @@ namespace TBS.Screens
 		private readonly Dictionary<string, Sprite> _texturesUnitsPreview = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
 		private SpriteFont _font, _fontDebug, _fontLife;
-		private Vector2 _cursorPos;
+		private Vector2 _cursorPos, _curMovePath;
 		private Unit _selectedUnit;
 		private int _currentPlayer;
 		private int _turn;
@@ -316,8 +316,9 @@ namespace TBS.Screens
 		    }
 
 			// Possible path to mouse
-		    if (_selectedUnit != null && !_selectedUnit.Moved && _cursorPos != _nullCursor)
-		    {
+			if (_selectedUnit != null && !_selectedUnit.Moved && _cursorPos != _nullCursor && _cursorPos != _curMovePath)
+			{
+				_curMovePath = _cursorPos;
 			    var init = new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y);
 			    if (_movePath != null && _movePath.Any())
 				{
@@ -326,23 +327,23 @@ namespace TBS.Screens
 						_movePath.Last().Position,
 						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
 						(int)_movePath.Last().DistanceTraveled);
-				    if (nodes != null && nodes.Any())
-				    {
-					    if (nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
-					    {
-						    nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
+					if (nodes != null && nodes.Any())
+					{
+						if (nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
+						{
+							nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
 							if (nodes != null && nodes.Any() &&
-								(nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
-								|| nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
-								   && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
+							    (nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
+							     || nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
+							     && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
 								_movePath = nodes;
-					    }
-					    else
-						    _movePath.AddRange(nodes);
-				    }
-				    else
+						}
+						else
+							_movePath.AddRange(nodes);
+					}
+					else
 						_movePath = nodes;
-			    }
+				}
 				if (_movePath == null || !_movePath.Any())
 				{
 					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
@@ -504,7 +505,7 @@ namespace TBS.Screens
 	        if (_movePath != null && _selectedUnit != null)
 			{
 				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
-		        foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X]))
+				foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X] || _availableAttacks[n.Position.Y, n.Position.X] == 2))
 			        _attack.Draw(
 				        spriteBatch,
 				        0.82f,
