@@ -6,13 +6,15 @@ namespace TBS
 	{
 		public string Type { get; private set; }
 		public int Defense { get; private set; }
+		public bool Hiding { get; private set; }
 		public Sprite Texture { get; set; }
 		public Dictionary<Unit.MoveType, int> MoveCosts { get; private set; }
 
-		public Terrain(string type, int defense, params int[] costs)
+		public Terrain(string type, bool hiding, int defense, params int[] costs)
 		{
 			Type = type;
 			Defense = defense;
+			Hiding = hiding;
 			MoveCosts = new Dictionary<Unit.MoveType, int>
 			{
 				{ Unit.MoveType.Infantry, costs[0] },
@@ -24,6 +26,11 @@ namespace TBS
 				{ Unit.MoveType.Ship, costs[6] },
 				{ Unit.MoveType.Transport, costs[7] }
 			};
+		}
+
+		public bool IsSea()
+		{
+			return (Type == "Sea" || Type == "Bridge");
 		}
 	}
 }

@@ -29,7 +29,8 @@ namespace TBS.Screens
 		private readonly Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsPreview = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
-		private SpriteFont _font, _fontDebug, _fontLife;
+		private SpriteFont _font, _fontDebug;
+	    private Sprite _fontLife, _capturing;
 		private Vector2 _cursorPos, _curMovePath;
 		private Unit _selectedUnit;
 		private int _currentPlayer;
@@ -42,7 +43,7 @@ namespace TBS.Screens
 		private bool[,] _availableMoves;
 		private int[,] _availableAttacks;
 		private readonly Building[,] _mapBuildings;
-		private readonly List<Unit> _units;
+	    private readonly List<Unit> _units;
 	    private Unit _attacksShowing;
 
 		private bool _showContextMenu;
@@ -58,7 +59,7 @@ namespace TBS.Screens
 
 	    public GameplayScreen()
         {
-            TransitionOnTime = TimeSpan.FromSeconds(1.5);
+		    TransitionOnTime = TimeSpan.FromSeconds(1.5);
 			TransitionOffTime = TimeSpan.FromSeconds(0.5);
 
 			UnitCreator.Initialize();
@@ -69,44 +70,71 @@ namespace TBS.Screens
 				new Player(1, false),
 				new Player(2, true)
 			};
-	        const string terrain = "6666666\n" +
-	                               "6000006\n" +
-	                               "6022206\n" +
-	                               "6023206\n" +
-	                               "6022206\n" +
-	                               "6011106\n" +
-	                               "6666666\n";
-		    _terrains = new[]
+			_terrains = new[]
 		    {
-			    new Terrain("Plains", 1, 1, 1, 2, 1, 1, 1, -1, -1),
-			    new Terrain("Road", 0, 1, 1, 1, 1, 1, 1, -1, -1),
-			    new Terrain("Wood", 3, 1, 1, 3, 3, 2, 1, -1, -1),
-			    new Terrain("Mountain", 4, 2, 1, -1, -1, -1, 1, -1, -1),
-			    new Terrain("Wasteland", 2, 1, 1, 3, 3, 2, 1, -1, -1),
-			    new Terrain("Ruins", 1, 1, 1, 2, 1, 1, 1, -1, -1),
-			    new Terrain("Sea", 0, -1, -1, -1, -1, -1, 1, 1, 1)
+			    new Terrain("Plains", false, 1, 1, 1, 2, 1, 1, 1, -1, -1),
+			    new Terrain("Road", false, 0, 1, 1, 1, 1, 1, 1, -1, -1),
+			    new Terrain("Wood", true, 3, 1, 1, 3, 3, 2, 1, -1, -1),
+			    new Terrain("Mountain", false, 4, 2, 1, -1, -1, -1, 1, -1, -1),
+			    new Terrain("Wasteland", false, 2, 1, 1, 3, 3, 2, 1, -1, -1),
+			    new Terrain("Ruins", true, 1, 1, 1, 2, 1, 1, 1, -1, -1),
+			    new Terrain("Sea", false, 0, -1, -1, -1, -1, -1, 1, 1, 1),
+			    new Terrain("Bridge", false, 0, 1, 1, 1, 1, 1, 1, 1, 1)/*,
+			    new Terrain("River", false, 0, 2, 1, -1, -1, -1, 1, -1, -1),
+			    new Terrain("Beach", false, 0, 1, 1, 2, 2, 1, 1, -1, 1),
+			    new Terrain("Rough Sea", false, 0, -1, -1, -1, -1, -1, 1, 2, 2),
+			    new Terrain("Mist", true, 0, -1, -1, -1, -1, -1, 1, 1, 1),
+			    new Terrain("Reef", true, 0, -1, -1, -1, -1, -1, 1, 2, 2)*/
 		    };
+			const string terrain = "666666666666666\n" +
+			                       "660211711020006\n" +
+								   "600212601000006\n" +
+								   "600116661030106\n" +
+								   "600106661030106\n" +
+								   "601106621111106\n" +
+								   "600000022066166\n" +
+								   "660000000066006\n" +
+								   "666630320010006\n" +
+								   "666666666666666\n";
+			const string buildings = "1,11,2,2\n" +
+									 "1,13,2,2\n" +
+									 "2,9,0,1\n" +
+									 "2,12,2,0\n" +
+									 "2,13,2,2\n" +
+									 "3,1,0,1\n" +
+									 "3,2,0,1\n" +
+									 "3,13,2,2\n" +
+									 "4,9,0,1\n" +
+									 "4,11,0,1\n" +
+									 "5,1,1,2\n" +
+									 "5,4,0,1\n" +
+									 "5,13,0,1\n" +
+									 "6,1,1,2\n" +
+									 "6,2,1,0\n" +
+									 "7,2,1,2\n" +
+									 "7,3,1,2\n" +
+									 "8,5,0,1\n" +
+									 "8,8,0,1\n" +
+									 "8,12,0,1\n" +
+									 "8,13,0,1\n";
 			var lines = terrain.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 	        _mapHeight = lines.Length;
 	        _mapWidth = lines[0].Trim().Length;
-			_mapTerrains = new Terrain[_mapHeight, _mapWidth];
-			for (var y = 0; y < _mapTerrains.GetLength(1); ++y)
-				for (var x = 0; x < _mapTerrains.GetLength(0); ++x)
-					_mapTerrains[y, x] = _terrains[lines[y][x] - '0'];
-			_availableMoves = new bool[_mapHeight, _mapWidth];
-			_availableAttacks = new int[_mapHeight, _mapWidth];
 			_mapBuildings = new Building[_mapHeight, _mapWidth];
-			_mapBuildings[1, 1] = new Building(0, _players[0]);
-			_mapBuildings[5, 5] = new Building(0, _players[1]);
-			_mapBuildings[5, 1] = new Building(1, null);
-			_mapBuildings[1, 5] = new Building(1, null);
-			_units = new List<Unit>
-			{
-				UnitCreator.Unit("Infantry", _players[0], new Vector2(2, 1)),
-				UnitCreator.Unit("Artillery", _players[0], new Vector2(1, 2)),
-				UnitCreator.Unit("Bike", _players[1], new Vector2(5, 4)),
-				UnitCreator.Unit("Battle Copter", _players[1], new Vector2(4, 5))
-			};
+			_mapTerrains = new Terrain[_mapHeight, _mapWidth];
+			for (var y = 0; y < _mapHeight; ++y)
+				for (var x = 0; x < _mapWidth; ++x)
+					_mapTerrains[y, x] = _terrains[lines[y][x] - '0'];
+		    var bldngs = buildings.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+			_mapBuildings = new Building[_mapHeight, _mapWidth];
+		    foreach (var data in bldngs.Select(b => b.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
+		    {
+			    var p = Convert.ToInt32(data[2]);
+				_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(Convert.ToInt32(data[3]), p == 0 ? null : _players[p - 1]);
+		    }
+		    _availableMoves = new bool[_mapHeight, _mapWidth];
+			_availableAttacks = new int[_mapHeight, _mapWidth];
+			_units = new List<Unit>();
 			_camera = new Vector2(-50, -80);
 			_turn = 1;
 			_currentPlayer = 1;
@@ -125,6 +153,7 @@ namespace TBS.Screens
 			_cursor = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Cursor"), 1, 2);
 			_move = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Move"));
 			_attack = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Attack"));
+			_capturing = new Sprite(_content.Load<Texture2D>("Capturing"));
 
 	        _terrains[0].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Plains"));
 			_terrains[1].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Road"));
@@ -132,14 +161,16 @@ namespace TBS.Screens
 			_terrains[3].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Mountain"));
 			_terrains[4].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Wasteland"));
 			_terrains[5].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Ruins"));
-			_terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Sea"));
+			_terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Sea"), 16);
+			_terrains[7].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"));
 			_gridWidth = _terrains[0].Texture.Texture.Width;
 			_gridHeight = _terrains[0].Texture.Texture.Width;
 
 			_texturesBuildings = new[]
 			{
-				new Sprite(_content.Load<Texture2D>("Buildings/Headquarters"), 5, 2),
-				new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 2)
+				new Sprite(_content.Load<Texture2D>("Buildings/Headquarters"), 5, 4),
+				new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 4),
+				new Sprite(_content.Load<Texture2D>("Buildings/Base"), 5, 4)
 			};
 	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 6, 3, 200));
 	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 6, 3, 200));
@@ -162,7 +193,7 @@ namespace TBS.Screens
 
 			_font = _content.Load<SpriteFont>("Fonts/Game");
 			_fontDebug = _content.Load<SpriteFont>("Fonts/Debug");
-			_fontLife = _content.Load<SpriteFont>("Fonts/Life");
+			_fontLife = new Sprite(_content.Load<Texture2D>("Fonts/Life"), 12);
 
 			GC.Collect();
             ScreenManager.Game.ResetElapsedTime();
@@ -401,7 +432,8 @@ namespace TBS.Screens
 			        else if (unitUnder.Type == _selectedUnit.Type)
 				        SetContextMenu("Merge", "Cancel");
 				}
-				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left) && unitUnder == null)
+				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left)
+					&& (unitUnder == null || unitUnder.Moved || unitUnder.Player.Number != _currentPlayer))
 				{
 					if (_selectedUnit != null)
 					{
@@ -467,17 +499,34 @@ namespace TBS.Screens
 			graphics.Clear(ClearOptions.Target, Color.CornflowerBlue, 0, 0);
 			spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend);
 
-			// Draw terrain
+			// Draw terrain and bridges
 			for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
-					_mapTerrains[y, x].Texture.Draw(
+				{
+					var terrain = _mapTerrains[y, x];
+					var tex = terrain.Type == "Bridge" ? _terrains[6].Texture : terrain.Texture;
+					tex.Draw(
 						spriteBatch,
 						y / 100f,
 						new Vector2(
 							_gridWidth * x - _camera.X,
-							_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height));
+							_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
+						terrain.Type == "Sea" || terrain.Type == "Bridge"
+							? (y > 0 && !_mapTerrains[y - 1, x].IsSea() ? 8 : 0)
+							  + (x < _mapWidth - 1 && !_mapTerrains[y, x + 1].IsSea() ? 4 : 0)
+							  + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsSea() ? 2 : 0)
+							  + (x > 0 && !_mapTerrains[y, x - 1].IsSea() ? 1 : 0)
+							: 0);
+					if (terrain.Type == "Bridge")
+						_mapTerrains[y, x].Texture.Draw(
+							spriteBatch,
+							y / 100f,
+							new Vector2(
+								_gridWidth * x - _camera.X,
+								_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height));
+				}
 
-			// Draw available displacements
+	        // Draw available displacements
 			if (_selectedUnit != null && !_selectedUnit.Moved)
 				for (var y = 0; y < _mapHeight; ++y)
 					for (var x = 0; x < _mapWidth; ++x)
@@ -529,7 +578,7 @@ namespace TBS.Screens
 							pos,
 							_mapBuildings[y, x].Player == null ? 0 : _mapBuildings[y, x].Player.Number);
 						if (_mapBuildings[y, x].CaptureStatus < 20)
-							spriteBatch.DrawString(_fontLife, "" + _mapBuildings[y, x].CaptureStatus, pos + new Vector2(16, 6), Color.Blue, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
+							_capturing.Draw(spriteBatch, 0.91f, pos + new Vector2(0, texture.Height - 8));
 					}
 
 	        // Draw units
@@ -557,8 +606,12 @@ namespace TBS.Screens
 				        u.Player.Number - 1,
 				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
 				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
-		        if (u.Life <= 90)
-					spriteBatch.DrawString(_fontLife, "" + Math.Ceiling((double)u.Life / 10), _gridWidth * u.Position - _camera + new Vector2(_gridWidth - 6, _gridHeight - 11), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
+				if (u.Life <= 90)
+					_fontLife.Draw(
+						spriteBatch,
+						0.91f,
+						_gridWidth * u.Position - _camera + new Vector2(_gridWidth - 8, _gridHeight - 8),
+						(int)Math.Ceiling((double)u.Life / 10));
 	        }
 
 	        // User Interface

@@ -41,7 +41,7 @@ namespace TBS
 
 		private void InitializeSearchNodes(Terrain[,] map, List<Unit> units, Unit unit)
 		{
-			_searchNodes = new Node[_levelHeight, _levelWidth];
+			_searchNodes = new Node[_levelWidth, _levelHeight];
 			for (var y = 0; y < _levelHeight; y++)
 			{
 				for (var x = 0; x < _levelWidth; x++)
