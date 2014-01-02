@@ -1,19 +1,8 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// MenuEntry.cs
-//
-// XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-#endregion
 
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// Helper class represents a single entry in a MenuScreen. By default this
@@ -28,7 +17,7 @@ namespace TBS
         /// <summary>
         /// The text rendered for this entry.
         /// </summary>
-        string text;
+        string _text;
 
         /// <summary>
         /// Tracks a fading selection effect on the entry.
@@ -36,13 +25,13 @@ namespace TBS
         /// <remarks>
         /// The entries transition out of the selection effect when they are deselected.
         /// </remarks>
-        float selectionFade;
+        float _selectionFade;
 
         /// <summary>
         /// The position at which the entry is drawn. This is set by the MenuScreen
         /// each frame in Update.
         /// </summary>
-        Vector2 position;
+        Vector2 _position;
 
         #endregion
 
@@ -54,8 +43,8 @@ namespace TBS
         /// </summary>
         public string Text
         {
-            get { return text; }
-            set { text = value; }
+            get { return _text; }
+            set { _text = value; }
         }
 
 
@@ -64,8 +53,8 @@ namespace TBS
         /// </summary>
         public Vector2 Position
         {
-            get { return position; }
-            set { position = value; }
+            get { return _position; }
+            set { _position = value; }
         }
 
 
@@ -100,7 +89,7 @@ namespace TBS
         /// </summary>
         public MenuEntry(string text)
         {
-            this.text = text;
+            _text = text;
         }
 
 
@@ -125,9 +114,9 @@ namespace TBS
             // popping to the new state.
             var fadeSpeed = (float)gameTime.ElapsedGameTime.TotalSeconds * 4;
 
-	        selectionFade = isSelected
-						  ? Math.Min(selectionFade + fadeSpeed, 1)
-						  : Math.Max(selectionFade - fadeSpeed, 0);
+	        _selectionFade = isSelected
+						  ? Math.Min(_selectionFade + fadeSpeed, 1)
+						  : Math.Max(_selectionFade - fadeSpeed, 0);
         }
 
 
@@ -148,7 +137,7 @@ namespace TBS
             // Pulsate the size of the selected menu entry.
             var time = gameTime.TotalGameTime.TotalSeconds;
             var pulsate = (float)Math.Sin(time * 6) + 1;
-			var scale = 1 + pulsate * 0.05f * selectionFade;
+			var scale = 1 + pulsate * 0.05f * _selectionFade;
 
             // Modify the alpha to fade text out during transitions.
             color *= screen.TransitionAlpha;
@@ -160,7 +149,7 @@ namespace TBS
 
             var origin = new Vector2(0, font.LineSpacing / 2f);
 
-			spriteBatch.DrawString(font, text, position - new Vector2(GetWidth(screen) * (scale - 1) / 2f, 0), color, 0,
+			spriteBatch.DrawString(font, _text, _position - new Vector2(GetWidth(screen) * (scale - 1) / 2f, 0), color, 0,
                                    origin, scale, SpriteEffects.None, 0);
         }
 

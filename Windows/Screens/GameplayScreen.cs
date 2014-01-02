@@ -1,13 +1,3 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// GameplayScreen.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +5,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-#endregion
+using TBS.ScreenManager;
 
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// This screen implements the actual game logic. It is just a
@@ -34,22 +24,23 @@ namespace TBS
 
 		private Sprite _cursor, _move, _attack;
 	    private Sprite[] _texturesBuildings;
-	    private Terrain[] _terrains;
-		private Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
-		private Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
+	    private readonly Terrain[] _terrains;
+		private readonly Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
+		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
 		private SpriteFont _font, _fontDebug, _fontLife;
 		private Vector2 _cursorPos;
 		private Unit _selectedUnit;
 		private int _currentPlayer;
 		private int _turn;
+	    private readonly int _mapHeight, _mapWidth;
 
-		private Vector2 _camera;
-		private Player[] _players;
-		private Terrain[,] _mapTerrains;
+	    private Vector2 _camera;
+		private readonly Player[] _players;
+		private readonly Terrain[,] _mapTerrains;
 		private bool[,] _availableMoves;
 		private bool[,] _availableAttacks;
-		private Building[,] _mapBuildings;
-		private List<Unit> _units;
+		private readonly Building[,] _mapBuildings;
+		private readonly List<Unit> _units;
 	    private Unit _attacksShowing;
 
 		private bool _showContextMenu;
@@ -61,11 +52,14 @@ namespace TBS
 		private int _fpsFrameCounter;
 		private TimeSpan _fpsElapsed = TimeSpan.Zero;
 		private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
+	    private List<Node> _movePath;
 
-        public GameplayScreen()
+	    public GameplayScreen()
         {
             TransitionOnTime = TimeSpan.FromSeconds(1.5);
 			TransitionOffTime = TimeSpan.FromSeconds(0.5);
+
+			UnitCreator.Initialize();
 
 			_nullCursor = new Vector2(-1, -1);
 			_players = new[]
@@ -73,16 +67,13 @@ namespace TBS
 				new Player(1, false),
 				new Player(2, true)
 			};
-			var terrain = new[,]
-			{
-				{ 6, 6, 6, 6, 6, 6, 6 },
-				{ 6, 0, 0, 0, 0, 0, 6 },
-				{ 6, 0, 2, 2, 2, 0, 6 },
-				{ 6, 0, 2, 3, 2, 0, 6 },
-				{ 6, 0, 2, 2, 2, 0, 6 },
-				{ 6, 0, 1, 1, 1, 0, 6 },
-				{ 6, 6, 6, 6, 6, 6, 6 }
-			};
+	        const string terrain = "6666666\n" +
+	                               "6000006\n" +
+	                               "6022206\n" +
+	                               "6023206\n" +
+	                               "6022206\n" +
+	                               "6011106\n" +
+	                               "6666666\n";
 		    _terrains = new[]
 		    {
 			    new Terrain("Plains", 1, 1, 1, 2, 1, 1, 1, -1, -1),
@@ -93,13 +84,16 @@ namespace TBS
 			    new Terrain("Ruins", 1, 1, 1, 2, 1, 1, 1, -1, -1),
 			    new Terrain("Sea", 0, -1, -1, -1, -1, -1, 1, 1, 1)
 		    };
-		    _mapTerrains = new Terrain[7, 7];
+			var lines = terrain.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+	        _mapHeight = lines.Length;
+	        _mapWidth = lines[0].Trim().Length;
+			_mapTerrains = new Terrain[_mapHeight, _mapWidth];
 			for (var y = 0; y < _mapTerrains.GetLength(1); ++y)
 				for (var x = 0; x < _mapTerrains.GetLength(0); ++x)
-					_mapTerrains[y, x] = _terrains[terrain[y, x]];
-			_availableMoves = new bool[7, 7];
-			_availableAttacks = new bool[7, 7];
-			_mapBuildings = new Building[7, 7];
+					_mapTerrains[y, x] = _terrains[lines[y][x] - '0'];
+			_availableMoves = new bool[_mapHeight, _mapWidth];
+			_availableAttacks = new bool[_mapHeight, _mapWidth];
+			_mapBuildings = new Building[_mapHeight, _mapWidth];
 			_mapBuildings[1, 1] = new Building(0, _players[0]);
 			_mapBuildings[5, 5] = new Building(0, _players[1]);
 			_mapBuildings[5, 1] = new Building(1, null);
@@ -107,7 +101,7 @@ namespace TBS
 			_units = new List<Unit>
 			{
 				UnitCreator.Unit("Infantry", _players[0], new Vector2(2, 1)),
-				UnitCreator.Unit("Mech", _players[0], new Vector2(1, 2)),
+				UnitCreator.Unit("Artillery", _players[0], new Vector2(1, 2)),
 				UnitCreator.Unit("Bike", _players[1], new Vector2(5, 4)),
 				UnitCreator.Unit("Battle Copter", _players[1], new Vector2(4, 5))
 			};
@@ -145,11 +139,13 @@ namespace TBS
 	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 3, 3, 200));
 	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 3, 3, 200));
 			_texturesUnitsSmall.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 3, 3, 200));
+			_texturesUnitsSmall.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 3, 3, 200));
 			_texturesUnitsSmall.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Small/FightHeli"), 3, 3, 200));
 			_texturesUnitsSmall.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Small/TransHeli"), 3, 3, 200));
 	        _texturesUnitsBig.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Big/Inf1"), 3, 3, 200));
 			_texturesUnitsBig.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Big/Bazooka1"), 3, 3, 200));
 			_texturesUnitsBig.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 3, 3, 200));
+			_texturesUnitsBig.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 3, 3, 200));
 			_texturesUnitsBig.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 3, 3, 200));
 			_texturesUnitsBig.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 3, 3, 200));
 
@@ -209,6 +205,7 @@ namespace TBS
 
 		    // Context menu
 		    var oldShow = _showContextMenu;
+		    var noSelect = false;
 		    if (_showContextMenu && Souris.Get().Clicked(MouseButton.Left))
 		    {
 			    var rect = ContextMenuRect(5, _camera);
@@ -218,8 +215,9 @@ namespace TBS
 					if (selected == "Move")
 					{
 						_selectedUnit.Move(_cursorPos);
-						_availableMoves = new bool[7, 7];
+						_availableMoves = new bool[_mapHeight, _mapWidth];
 						_selectedUnit = null;
+						_movePath = null;
 					}
 					else if (selected == "Attack")
 					{
@@ -228,7 +226,7 @@ namespace TBS
 						if (nodes != null && nodes.Count > 1)
 						{
 							_selectedUnit.Move(new Vector2(nodes[nodes.Count - 2].Position.X, nodes[nodes.Count - 2].Position.Y));
-							_availableMoves = new bool[7, 7];
+							_availableMoves = new bool[_mapHeight, _mapWidth];
 						}
 						_selectedUnit.Moved = true;
 						var unitUnder = _units.FirstOrDefault(t =>
@@ -243,28 +241,29 @@ namespace TBS
 								_units.Remove(unitUnder);
 						}
 						_selectedUnit = null;
+						_movePath = null;
 					}
 					else if (selected == "Capture")
 					{
 						_selectedUnit.Move(_cursorPos);
-						_availableMoves = new bool[7, 7];
+						_availableMoves = new bool[_mapHeight, _mapWidth];
 						_selectedUnit.Capture(_mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X]);
 						_selectedUnit = null;
+						_movePath = null;
 					}
 					else if (selected == "Wait")
 					{
 						_selectedUnit.Move(_cursorPos);
-						_availableMoves = new bool[7, 7];
+						_availableMoves = new bool[_mapHeight, _mapWidth];
 						_selectedUnit = null;
+						_movePath = null;
 					}
 					else if (selected == "End turn")
-					{
 						NextTurn();
-						return;
-					}
 			    }
 				_showContextMenu = false;
-			}
+			    noSelect = true;
+		    }
 
 			// Update cursor position
 	        if (!_showContextMenu)
@@ -279,7 +278,7 @@ namespace TBS
 			// Right click
 		    if (_attacksShowing != null && !Souris.Get().Pressed(MouseButton.Right))
 			{
-				_availableAttacks = new bool[7, 7];
+				_availableAttacks = new bool[_mapHeight, _mapWidth];
 				_attacksShowing = null;
 		    }
 		    else if (Souris.Get().Clicked(MouseButton.Right))
@@ -294,27 +293,25 @@ namespace TBS
 					if (unitUnder != null)
 					{
 						_attacksShowing = unitUnder;
-						_availableAttacks = new bool[7, 7];
+						_availableAttacks = new bool[_mapHeight, _mapWidth];
 						var pf = new AStar(_mapTerrains, _units, unitUnder);
 						for (var y = (int)Math.Max(unitUnder.Position.Y - unitUnder.MovingDistance, 0); y <= (int)Math.Min(unitUnder.Position.Y + unitUnder.MovingDistance, _mapTerrains.GetLength(1) - 1); ++y)
 							for (var x = (int)Math.Max(unitUnder.Position.X - unitUnder.MovingDistance, 0); x <= (int)Math.Min(unitUnder.Position.X + unitUnder.MovingDistance, _mapTerrains.GetLength(0) - 1); ++x)
 							{
 								var nodes = pf.FindPath(new Point((int)unitUnder.Position.X, (int)unitUnder.Position.Y), new Point(x, y));
-								if (nodes != null && nodes.Any() && nodes.Last().DistanceTraveled <= unitUnder.MovingDistance
-								    || y == (int)unitUnder.Position.Y && x == (int)unitUnder.Position.X)
-								{
-									_availableAttacks[y, x] = true;
-									if (nodes != null && nodes.Any() && nodes.Last().Occupied)
-										continue;
-									if (y > 0)
-										_availableAttacks[y - 1, x] = true;
-									if (y < _mapTerrains.GetLength(0) - 1)
-										_availableAttacks[y + 1, x] = true;
-									if (x > 0)
-										_availableAttacks[y, x - 1] = true;
-									if (x < _mapTerrains.GetLength(1) - 1)
-										_availableAttacks[y, x + 1] = true;
-								}
+								if ((nodes == null || !nodes.Any()
+										|| !(nodes.Last().DistanceTraveled <= unitUnder.MovingDistance)
+										|| !unitUnder.CanMoveAndAttack()) && (y != (int)unitUnder.Position.Y || x != (int)unitUnder.Position.X))
+									continue;
+								if (nodes != null && nodes.Any() && nodes.Last().Occupied)
+									continue;
+								for (var iy = Math.Max(y - unitUnder.RangeMax, 0); iy <= Math.Min(y + unitUnder.RangeMax, _mapTerrains.GetLength(1) - 1); ++iy)
+									for (var ix = Math.Max(x - unitUnder.RangeMax, 0); ix <= Math.Min(x + unitUnder.RangeMax, _mapTerrains.GetLength(0) - 1); ++ix)
+									{
+										if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unitUnder.RangeMax
+										    && Math.Abs(y - iy) + Math.Abs(x - ix) >= unitUnder.RangeMin)
+											_availableAttacks[iy, ix] = true;
+									}
 							}
 					}
 					else
@@ -322,8 +319,17 @@ namespace TBS
 			    }
 		    }
 
+			// Possible path to mouse
+		    if (_selectedUnit != null && !_selectedUnit.Moved && _cursorPos != _nullCursor)
+		    {
+			    var pf = new AStar(_mapTerrains, _units, _selectedUnit);
+				var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point((int)_cursorPos.X, (int)_cursorPos.Y));
+			    if (nodes != null && nodes.Any())
+				    _movePath = nodes;
+		    }
+
 		    // Mouse click
-	        if (Souris.Get().Clicked(MouseButton.Left) && _cursorPos != _nullCursor)
+			if (Souris.Get().Clicked(MouseButton.Left) && _cursorPos != _nullCursor && !noSelect)
 	        {
 				var unitUnder = _units.FirstOrDefault(t =>
 					Math.Abs(t.Position.X - _cursorPos.X) < 0.1
@@ -331,7 +337,7 @@ namespace TBS
 		        if (Souris.Get().Clicked(MouseButton.Left) && (_selectedUnit == null || _selectedUnit.Moved) && unitUnder != null && !unitUnder.Moved && unitUnder.Player.Number == _currentPlayer)
 		        {
 			        _selectedUnit = unitUnder;
-			        _availableMoves = new bool[7, 7];
+					_availableMoves = new bool[_mapHeight, _mapWidth];
 			        _availableMoves[(int)_selectedUnit.Position.Y, (int)_selectedUnit.Position.X] = true;
 			        var pf = new AStar(_mapTerrains, _units, _selectedUnit);
 			        for (var y = (int)Math.Max(_selectedUnit.Position.Y - _selectedUnit.MovingDistance, 0); y <= (int)Math.Min(_selectedUnit.Position.Y + _selectedUnit.MovingDistance, _mapTerrains.GetLength(1) - 1); ++y)
@@ -453,13 +459,24 @@ namespace TBS
 			if (_attacksShowing != null)
 				for (var y = 0; y < _availableAttacks.GetLength(0); ++y)
 					for (var x = 0; x < _availableAttacks.GetLength(1); ++x)
-						if (_availableAttacks[y, x] && (_selectedUnit != _attacksShowing || _selectedUnit.Moved || !_availableMoves[y, x]))
+						if (_availableAttacks[y, x] && (_selectedUnit != _attacksShowing || _selectedUnit != null && _selectedUnit.Moved || !_availableMoves[y, x]))
 							_attack.Draw(
 								spriteBatch,
 								0.81f,
 								new Vector2(
 									32 * x - _camera.X,
 									32 * y - _camera.Y));
+
+			// Draw current moving path
+			if (_movePath != null && _selectedUnit != null)
+				foreach (var n in _movePath)
+					if (_availableMoves[n.Position.Y, n.Position.X])
+						_attack.Draw(
+							spriteBatch,
+							0.82f,
+							new Vector2(
+								32 * n.Position.X - _camera.X,
+								32 * n.Position.Y - _camera.Y));
 
 			// Draw buildings
 			for (var y = 0; y < _mapTerrains.GetLength(0); ++y)

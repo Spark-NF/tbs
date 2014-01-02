@@ -1,4 +1,4 @@
-namespace TBS
+namespace TBS.Screens
 {
     class OptionsMenuScreen : MenuScreen
     {

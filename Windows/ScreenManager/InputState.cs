@@ -1,20 +1,9 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// InputState.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
-using System.Collections.Generic;
-#endregion
 
-namespace TBS
+namespace TBS.ScreenManager
 {
     /// <summary>
     /// Helper for reading input from keyboard, gamepad, and touch input. This class 
@@ -110,19 +99,17 @@ namespace TBS
                 // Read input from the specified player.
                 playerIndex = controllingPlayer.Value;
 
-                int i = (int)playerIndex;
+                var i = (int)playerIndex;
 
                 return (CurrentKeyboardStates[i].IsKeyDown(key) &&
                         LastKeyboardStates[i].IsKeyUp(key));
             }
-            else
-            {
-                // Accept input from any player.
-                return (IsNewKeyPress(key, PlayerIndex.One, out playerIndex) ||
-                        IsNewKeyPress(key, PlayerIndex.Two, out playerIndex) ||
-                        IsNewKeyPress(key, PlayerIndex.Three, out playerIndex) ||
-                        IsNewKeyPress(key, PlayerIndex.Four, out playerIndex));
-            }
+
+            // Accept input from any player.
+            return (IsNewKeyPress(key, PlayerIndex.One, out playerIndex) ||
+                    IsNewKeyPress(key, PlayerIndex.Two, out playerIndex) ||
+                    IsNewKeyPress(key, PlayerIndex.Three, out playerIndex) ||
+                    IsNewKeyPress(key, PlayerIndex.Four, out playerIndex));
         }
 
 
@@ -140,19 +127,17 @@ namespace TBS
                 // Read input from the specified player.
                 playerIndex = controllingPlayer.Value;
 
-                int i = (int)playerIndex;
+                var i = (int)playerIndex;
 
                 return (CurrentGamePadStates[i].IsButtonDown(button) &&
                         LastGamePadStates[i].IsButtonUp(button));
             }
-            else
-            {
-                // Accept input from any player.
-                return (IsNewButtonPress(button, PlayerIndex.One, out playerIndex) ||
-                        IsNewButtonPress(button, PlayerIndex.Two, out playerIndex) ||
-                        IsNewButtonPress(button, PlayerIndex.Three, out playerIndex) ||
-                        IsNewButtonPress(button, PlayerIndex.Four, out playerIndex));
-            }
+            
+            // Accept input from any player.
+            return (IsNewButtonPress(button, PlayerIndex.One, out playerIndex) ||
+                    IsNewButtonPress(button, PlayerIndex.Two, out playerIndex) ||
+                    IsNewButtonPress(button, PlayerIndex.Three, out playerIndex) ||
+                    IsNewButtonPress(button, PlayerIndex.Four, out playerIndex));
         }
 
 

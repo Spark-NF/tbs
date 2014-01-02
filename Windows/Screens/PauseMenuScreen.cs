@@ -1,16 +1,4 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// PauseMenuScreen.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
-#endregion
-
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// The pause menu comes up over the top of the game,

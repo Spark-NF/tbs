@@ -1,19 +1,8 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// LoadingScreen.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using System;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-#endregion
+using TBS.ScreenManager;
 
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// The loading screen coordinates transitions between the menu system and the
@@ -31,26 +20,18 @@ namespace TBS
     /// </summary>
     class LoadingScreen : GameScreen
     {
-        #region Fields
-
-        bool loadingIsSlow;
+	    readonly bool _loadingIsSlow;
         bool _otherScreensAreGone;
-        GameScreen[] screensToLoad;
-
-        #endregion
-
-        #region Initialization
-
+	    readonly GameScreen[] _screensToLoad;
 
         /// <summary>
         /// The constructor is private: loading screens should
         /// be activated via the static Load method instead.
         /// </summary>
-        private LoadingScreen(ScreenManager screenManager, bool loadingIsSlow,
-                              GameScreen[] screensToLoad)
+        private LoadingScreen(bool loadingIsSlow, GameScreen[] screensToLoad)
         {
-            this.loadingIsSlow = loadingIsSlow;
-            this.screensToLoad = screensToLoad;
+			_loadingIsSlow = loadingIsSlow;
+            _screensToLoad = screensToLoad;
 
             TransitionOnTime = TimeSpan.FromSeconds(0.5);
         }
@@ -59,27 +40,20 @@ namespace TBS
         /// <summary>
         /// Activates the loading screen.
         /// </summary>
-        public static void Load(ScreenManager screenManager, bool loadingIsSlow,
+		public static void Load(ScreenManager.ScreenManager screenManager, bool loadingIsSlow,
                                 PlayerIndex? controllingPlayer,
                                 params GameScreen[] screensToLoad)
         {
             // Tell all the current screens to transition off.
-            foreach (GameScreen screen in screenManager.GetScreens())
+            foreach (var screen in screenManager.GetScreens())
                 screen.ExitScreen();
 
             // Create and activate the loading screen.
-            LoadingScreen loadingScreen = new LoadingScreen(screenManager,
-                                                            loadingIsSlow,
+            var loadingScreen = new LoadingScreen(loadingIsSlow,
                                                             screensToLoad);
 
             screenManager.AddScreen(loadingScreen, controllingPlayer);
         }
-
-
-        #endregion
-
-        #region Update and Draw
-
 
         /// <summary>
         /// Updates the loading screen.
@@ -95,7 +69,7 @@ namespace TBS
             {
                 ScreenManager.RemoveScreen(this);
 
-                foreach (GameScreen screen in screensToLoad)
+                foreach (GameScreen screen in _screensToLoad)
                 {
                     if (screen != null)
                     {
@@ -131,7 +105,7 @@ namespace TBS
             // second while returning from the game to the menus. This parameter
             // tells us how long the loading is going to take, so we know whether
             // to bother drawing the message.
-	        if (!loadingIsSlow)
+	        if (!_loadingIsSlow)
 		        return;
 
 	        var spriteBatch = ScreenManager.SpriteBatch;
@@ -152,8 +126,5 @@ namespace TBS
 	        spriteBatch.DrawString(font, message, textPosition, color);
 	        spriteBatch.End();
         }
-
-
-        #endregion
     }
 }

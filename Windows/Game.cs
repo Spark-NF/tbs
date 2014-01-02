@@ -1,17 +1,17 @@
 ﻿using Microsoft.Xna.Framework;
+using TBS.Screens;
 
 namespace TBS
 {
 	public class GameStateManagementGame : Game
 	{
 		readonly GraphicsDeviceManager _graphics;
-		ScreenManager screenManager;
 
 		// By preloading any assets used by UI rendering, we avoid framerate glitches
 		// when they suddenly need to be loaded in the middle of a menu transition.
 		static readonly string[] PreloadAssets =
         {
-            "Menu/Gradient",
+            "Menu/Gradient"
         };
 
 		/// <summary>
@@ -32,7 +32,7 @@ namespace TBS
 			IsMouseVisible = true;
 
 			// Create the screen manager component.
-			screenManager = new ScreenManager(this);
+			var screenManager = new ScreenManager.ScreenManager(this);
 			Components.Add(screenManager);
 
 			// Activate the first screens.

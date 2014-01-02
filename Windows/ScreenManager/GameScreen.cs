@@ -1,20 +1,8 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// GameScreen.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
-using System.IO;
-#endregion
 
-namespace TBS
+namespace TBS.ScreenManager
 {
     /// <summary>
     /// Enum describes the screen transition state.
@@ -39,64 +27,38 @@ namespace TBS
     {
         #region Properties
 
+	    /// <summary>
+	    /// Normally when one screen is brought up over the top of another,
+	    /// the first screen will transition off to make room for the new
+	    /// one. This property indicates whether the screen is only a small
+	    /// popup, in which case screens underneath it do not need to bother
+	    /// transitioning off.
+	    /// </summary>
+	    public bool IsPopup { get; protected set; }
 
-        /// <summary>
-        /// Normally when one screen is brought up over the top of another,
-        /// the first screen will transition off to make room for the new
-        /// one. This property indicates whether the screen is only a small
-        /// popup, in which case screens underneath it do not need to bother
-        /// transitioning off.
-        /// </summary>
-        public bool IsPopup
-        {
-            get { return isPopup; }
-            protected set { isPopup = value; }
-        }
-
-        bool isPopup = false;
-
-
-        /// <summary>
-        /// Indicates how long the screen takes to
-        /// transition on when it is activated.
-        /// </summary>
-        public TimeSpan TransitionOnTime
-        {
-            get { return transitionOnTime; }
-            protected set { transitionOnTime = value; }
-        }
-
-        TimeSpan transitionOnTime = TimeSpan.Zero;
+	    /// <summary>
+	    /// Indicates how long the screen takes to
+	    /// transition on when it is activated.
+	    /// </summary>
+	    public TimeSpan TransitionOnTime { get; protected set; }
 
 
-        /// <summary>
-        /// Indicates how long the screen takes to
-        /// transition off when it is deactivated.
-        /// </summary>
-        public TimeSpan TransitionOffTime
-        {
-            get { return transitionOffTime; }
-            protected set { transitionOffTime = value; }
-        }
-
-        TimeSpan transitionOffTime = TimeSpan.Zero;
+	    /// <summary>
+	    /// Indicates how long the screen takes to
+	    /// transition off when it is deactivated.
+	    /// </summary>
+	    public TimeSpan TransitionOffTime { get; protected set; }
 
 
-        /// <summary>
-        /// Gets the current position of the screen transition, ranging
-        /// from zero (fully active, no transition) to one (transitioned
-        /// fully off to nothing).
-        /// </summary>
-        public float TransitionPosition
-        {
-            get { return transitionPosition; }
-            protected set { transitionPosition = value; }
-        }
-
-        float transitionPosition = 1;
+	    /// <summary>
+	    /// Gets the current position of the screen transition, ranging
+	    /// from zero (fully active, no transition) to one (transitioned
+	    /// fully off to nothing).
+	    /// </summary>
+	    public float TransitionPosition { get; protected set; }
 
 
-        /// <summary>
+	    /// <summary>
         /// Gets the current alpha of the screen transition, ranging
         /// from 1 (fully active, no transition) to 0 (transitioned
         /// fully off to nothing).
@@ -107,81 +69,57 @@ namespace TBS
         }
 
 
-        /// <summary>
-        /// Gets the current screen transition state.
-        /// </summary>
-        public ScreenState ScreenState
-        {
-            get { return screenState; }
-            protected set { screenState = value; }
-        }
-
-        ScreenState screenState = ScreenState.TransitionOn;
+	    /// <summary>
+	    /// Gets the current screen transition state.
+	    /// </summary>
+	    public ScreenState ScreenState { get; protected set; }
 
 
-        /// <summary>
-        /// There are two possible reasons why a screen might be transitioning
-        /// off. It could be temporarily going away to make room for another
-        /// screen that is on top of it, or it could be going away for good.
-        /// This property indicates whether the screen is exiting for real:
-        /// if set, the screen will automatically remove itself as soon as the
-        /// transition finishes.
-        /// </summary>
-        public bool IsExiting
-        {
-            get { return isExiting; }
-            protected internal set { isExiting = value; }
-        }
-
-        bool isExiting = false;
+	    /// <summary>
+	    /// There are two possible reasons why a screen might be transitioning
+	    /// off. It could be temporarily going away to make room for another
+	    /// screen that is on top of it, or it could be going away for good.
+	    /// This property indicates whether the screen is exiting for real:
+	    /// if set, the screen will automatically remove itself as soon as the
+	    /// transition finishes.
+	    /// </summary>
+	    public bool IsExiting { get; protected internal set; }
 
 
-        /// <summary>
+	    /// <summary>
         /// Checks whether this screen is active and can respond to user input.
         /// </summary>
         public bool IsActive
         {
             get
             {
-                return !otherScreenHasFocus &&
-                       (screenState == ScreenState.TransitionOn ||
-                        screenState == ScreenState.Active);
+                return !_otherScreenHasFocus &&
+                       (ScreenState == ScreenState.TransitionOn ||
+                        ScreenState == ScreenState.Active);
             }
         }
 
-        bool otherScreenHasFocus;
+        bool _otherScreenHasFocus;
 
 
-        /// <summary>
-        /// Gets the manager that this screen belongs to.
-        /// </summary>
-        public ScreenManager ScreenManager
-        {
-            get { return screenManager; }
-            internal set { screenManager = value; }
-        }
-
-        ScreenManager screenManager;
+	    /// <summary>
+	    /// Gets the manager that this screen belongs to.
+	    /// </summary>
+	    public ScreenManager ScreenManager { get; internal set; }
 
 
-        /// <summary>
-        /// Gets the index of the player who is currently controlling this screen,
-        /// or null if it is accepting input from any player. This is used to lock
-        /// the game to a specific player profile. The main menu responds to input
-        /// from any connected gamepad, but whichever player makes a selection from
-        /// this menu is given control over all subsequent screens, so other gamepads
-        /// are inactive until the controlling player returns to the main menu.
-        /// </summary>
-        public PlayerIndex? ControllingPlayer
-        {
-            get { return controllingPlayer; }
-            internal set { controllingPlayer = value; }
-        }
-
-        PlayerIndex? controllingPlayer;
+	    /// <summary>
+	    /// Gets the index of the player who is currently controlling this screen,
+	    /// or null if it is accepting input from any player. This is used to lock
+	    /// the game to a specific player profile. The main menu responds to input
+	    /// from any connected gamepad, but whichever player makes a selection from
+	    /// this menu is given control over all subsequent screens, so other gamepads
+	    /// are inactive until the controlling player returns to the main menu.
+	    /// </summary>
+	    public PlayerIndex? ControllingPlayer { get; internal set; }
 
 
-        /// <summary>
+	    /// <summary>
         /// Gets the gestures the screen is interested in. Screens should be as specific
         /// as possible with gestures to increase the accuracy of the gesture engine.
         /// For example, most menus only need Tap or perhaps Tap and VerticalDrag to operate.
@@ -190,10 +128,10 @@ namespace TBS
         /// </summary>
         public GestureType EnabledGestures
         {
-            get { return enabledGestures; }
+            get { return _enabledGestures; }
             protected set
             {
-                enabledGestures = value;
+                _enabledGestures = value;
 
                 // the screen manager handles this during screen changes, but
                 // if this screen is active and the gesture types are changing,
@@ -205,10 +143,18 @@ namespace TBS
             }
         }
 
-        GestureType enabledGestures = GestureType.None;
+        GestureType _enabledGestures = GestureType.None;
 
+	    protected GameScreen()
+	    {
+		    ScreenState = ScreenState.TransitionOn;
+		    TransitionPosition = 1;
+		    TransitionOnTime = TimeSpan.Zero;
+		    TransitionOffTime = TimeSpan.Zero;
+		    IsPopup = false;
+	    }
 
-        #endregion
+	    #endregion
 
         #region Initialization
 
@@ -238,14 +184,14 @@ namespace TBS
         public virtual void Update(GameTime gameTime, bool otherScreenHasFocus,
                                                       bool coveredByOtherScreen)
         {
-            this.otherScreenHasFocus = otherScreenHasFocus;
+            _otherScreenHasFocus = otherScreenHasFocus;
 
-            if (isExiting)
+            if (IsExiting)
             {
                 // If the screen is going away to die, it should transition off.
-                screenState = ScreenState.TransitionOff;
+                ScreenState = ScreenState.TransitionOff;
 
-                if (!UpdateTransition(gameTime, transitionOffTime, 1))
+                if (!UpdateTransition(gameTime, TransitionOffTime, 1))
                 {
                     // When the transition finishes, remove the screen.
                     ScreenManager.RemoveScreen(this);
@@ -254,30 +200,16 @@ namespace TBS
             else if (coveredByOtherScreen)
             {
                 // If the screen is covered by another, it should transition off.
-                if (UpdateTransition(gameTime, transitionOffTime, 1))
-                {
-                    // Still busy transitioning.
-                    screenState = ScreenState.TransitionOff;
-                }
-                else
-                {
-                    // Transition finished!
-                    screenState = ScreenState.Hidden;
-                }
+                ScreenState = UpdateTransition(gameTime, TransitionOffTime, 1)
+							? ScreenState.TransitionOff
+							: ScreenState.Hidden;
             }
             else
             {
                 // Otherwise the screen should transition on and become active.
-                if (UpdateTransition(gameTime, transitionOnTime, -1))
-                {
-                    // Still busy transitioning.
-                    screenState = ScreenState.TransitionOn;
-                }
-                else
-                {
-                    // Transition finished!
-                    screenState = ScreenState.Active;
-                }
+                ScreenState = UpdateTransition(gameTime, TransitionOnTime, -1)
+							? ScreenState.TransitionOn
+							: ScreenState.Active;
             }
         }
 
@@ -297,13 +229,13 @@ namespace TBS
                                           time.TotalMilliseconds);
 
             // Update the transition position.
-            transitionPosition += transitionDelta * direction;
+            TransitionPosition += transitionDelta * direction;
 
             // Did we reach the end of the transition?
-            if (((direction < 0) && (transitionPosition <= 0)) ||
-                ((direction > 0) && (transitionPosition >= 1)))
+            if (((direction < 0) && (TransitionPosition <= 0)) ||
+                ((direction > 0) && (TransitionPosition >= 1)))
             {
-                transitionPosition = MathHelper.Clamp(transitionPosition, 0, 1);
+                TransitionPosition = MathHelper.Clamp(TransitionPosition, 0, 1);
                 return false;
             }
 
@@ -346,7 +278,7 @@ namespace TBS
             else
             {
                 // Otherwise flag that it should transition off and then exit.
-                isExiting = true;
+                IsExiting = true;
             }
         }
 

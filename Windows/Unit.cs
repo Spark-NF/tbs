@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
 using Microsoft.Xna.Framework;
 
 namespace TBS
@@ -55,7 +53,8 @@ namespace TBS
 		public bool CanCapture { get; private set; }
 		public int Price { get; private set; }
 		public int Ammo { get; private set; }
-		public int Range { get; private set; }
+		public int RangeMin { get; private set; }
+		public int RangeMax { get; private set; }
 		public int Gas { get; private set; }
 		public int Life { get; private set; }
 		public MoveType MovementType { get; private set; }
@@ -64,8 +63,8 @@ namespace TBS
 		public Weapon SecondaryWeapon { get; private set; }
 		public Building Capturing { get; private set; }
 
-		public Unit(string type, int movingDistance, int visionDistance, Player player,
-					Vector2 position, bool canCapture, int price, int ammo, int range, int gas,
+		public Unit(string type, Player player, Vector2 position, int movingDistance, int visionDistance,
+					bool canCapture, int price, int ammo, int rangeMin, int rangeMax, int gas,
 					MoveType moveType, UnitType unitType, Weapon weapon1, Weapon weapon2)
 		{
 			Type = type;
@@ -78,7 +77,8 @@ namespace TBS
 			CanCapture = canCapture;
 			Price = price;
 			Ammo = ammo;
-			Range = range;
+			RangeMin = rangeMin;
+			RangeMax = rangeMax;
 			Gas = gas;
 			Life = 10;
 			MovementType = moveType;
@@ -96,6 +96,11 @@ namespace TBS
 				Capturing.StopCapture();
 			Position = position;
 			Moved = true;
+		}
+
+		public bool CanMoveAndAttack()
+		{
+			return RangeMax == RangeMin && RangeMax == 1;
 		}
 
 		public int WeightFromType(Terrain terrain)

@@ -1,26 +1,12 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// MainMenuScreen.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using Microsoft.Xna.Framework;
-#endregion
 
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// The main menu screen is the first thing displayed when the game starts up.
     /// </summary>
     class MainMenuScreen : MenuScreen
     {
-        #region Initialization
-
-
         /// <summary>
         /// Constructor fills in the menu contents.
         /// </summary>
@@ -43,12 +29,6 @@ namespace TBS
             MenuEntries.Add(exitMenuEntry);
         }
 
-
-        #endregion
-
-        #region Handle Input
-
-
         /// <summary>
         /// Event handler for when the Play Game menu entry is selected.
         /// </summary>
@@ -58,7 +38,6 @@ namespace TBS
                                new GameplayScreen());
         }
 
-
         /// <summary>
         /// Event handler for when the Options menu entry is selected.
         /// </summary>
@@ -66,7 +45,6 @@ namespace TBS
         {
             ScreenManager.AddScreen(new OptionsMenuScreen(), e.PlayerIndex);
         }
-
 
         /// <summary>
         /// When the user cancels the main menu, ask if they want to exit the sample.
@@ -82,7 +60,6 @@ namespace TBS
             ScreenManager.AddScreen(confirmExitMessageBox, playerIndex);
         }
 
-
         /// <summary>
         /// Event handler for when the user selects ok on the "are you sure
         /// you want to exit" message box.
@@ -91,8 +68,5 @@ namespace TBS
         {
             ScreenManager.Game.Exit();
         }
-
-
-        #endregion
     }
 }

@@ -1,20 +1,10 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// BackgroundScreen.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-#endregion
+using TBS.ScreenManager;
 
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// The background screen sits behind all the other menu screens.
@@ -25,8 +15,8 @@ namespace TBS
     {
         #region Fields
 
-        ContentManager content;
-        Texture2D backgroundTexture;
+        ContentManager _content;
+        Texture2D _backgroundTexture;
 
         #endregion
 
@@ -52,10 +42,10 @@ namespace TBS
         /// </summary>
         public override void LoadContent()
         {
-            if (content == null)
-                content = new ContentManager(ScreenManager.Game.Services, "Content");
+            if (_content == null)
+                _content = new ContentManager(ScreenManager.Game.Services, "Content");
 
-            backgroundTexture = content.Load<Texture2D>("Menu/Background");
+            _backgroundTexture = _content.Load<Texture2D>("Menu/Background");
         }
 
 
@@ -64,7 +54,7 @@ namespace TBS
         /// </summary>
         public override void UnloadContent()
         {
-            content.Unload();
+            _content.Unload();
         }
 
 
@@ -92,15 +82,13 @@ namespace TBS
         /// </summary>
         public override void Draw(GameTime gameTime)
         {
-            SpriteBatch spriteBatch = ScreenManager.SpriteBatch;
-            Viewport viewport = ScreenManager.GraphicsDevice.Viewport;
-            Rectangle fullscreen = new Rectangle(0, 0, viewport.Width, viewport.Height);
+			var spriteBatch = ScreenManager.SpriteBatch;
+			var viewport = ScreenManager.GraphicsDevice.Viewport;
+            var fullscreen = new Rectangle(0, 0, viewport.Width, viewport.Height);
 
             spriteBatch.Begin();
-
-            spriteBatch.Draw(backgroundTexture, fullscreen,
+            spriteBatch.Draw(_backgroundTexture, fullscreen,
                              new Color(TransitionAlpha, TransitionAlpha, TransitionAlpha));
-
             spriteBatch.End();
         }
 

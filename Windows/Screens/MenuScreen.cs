@@ -1,22 +1,10 @@
-#region File Description
-//-----------------------------------------------------------------------------
-// MenuScreen.cs
-//
-// XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//-----------------------------------------------------------------------------
-#endregion
-
-#region Using Statements
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input.Touch;
-using Microsoft.Xna.Framework.Input;
-#endregion
+using TBS.ScreenManager;
 
-namespace TBS
+namespace TBS.Screens
 {
     /// <summary>
     /// Base class for screens that contain a menu of options. The user can
@@ -26,9 +14,9 @@ namespace TBS
     {
         #region Fields
 
-        List<MenuEntry> menuEntries = new List<MenuEntry>();
-        int selectedEntry = 0;
-        string menuTitle;
+        readonly List<MenuEntry> _menuEntries = new List<MenuEntry>();
+        int _selectedEntry;
+		readonly string _menuTitle;
 
         #endregion
 
@@ -41,7 +29,7 @@ namespace TBS
         /// </summary>
         protected IList<MenuEntry> MenuEntries
         {
-            get { return menuEntries; }
+            get { return _menuEntries; }
         }
 
 
@@ -53,9 +41,9 @@ namespace TBS
         /// <summary>
         /// Constructor.
         /// </summary>
-        public MenuScreen(string menuTitle)
+        protected MenuScreen(string menuTitle)
         {
-            this.menuTitle = menuTitle;
+            _menuTitle = menuTitle;
 
             TransitionOnTime = TimeSpan.FromSeconds(0.5);
             TransitionOffTime = TimeSpan.FromSeconds(0.5);
@@ -76,19 +64,19 @@ namespace TBS
             // Move to the previous menu entry?
             if (input.IsMenuUp(ControllingPlayer))
             {
-                selectedEntry--;
+                _selectedEntry--;
 
-                if (selectedEntry < 0)
-                    selectedEntry = menuEntries.Count - 1;
+                if (_selectedEntry < 0)
+                    _selectedEntry = _menuEntries.Count - 1;
             }
 
             // Move to the next menu entry?
             if (input.IsMenuDown(ControllingPlayer))
             {
-                selectedEntry++;
+                _selectedEntry++;
 
-                if (selectedEntry >= menuEntries.Count)
-                    selectedEntry = 0;
+                if (_selectedEntry >= _menuEntries.Count)
+                    _selectedEntry = 0;
             }
 
             // Accept or cancel the menu? We pass in our ControllingPlayer, which may
@@ -100,7 +88,7 @@ namespace TBS
 
             if (input.IsMenuSelect(ControllingPlayer, out playerIndex))
             {
-                OnSelectEntry(selectedEntry, playerIndex);
+                OnSelectEntry(_selectedEntry, playerIndex);
             }
             else if (input.IsMenuCancel(ControllingPlayer, out playerIndex))
             {
@@ -114,7 +102,7 @@ namespace TBS
         /// </summary>
         protected virtual void OnSelectEntry(int entryIndex, PlayerIndex playerIndex)
         {
-            menuEntries[entryIndex].OnSelectEntry(playerIndex);
+            _menuEntries[entryIndex].OnSelectEntry(playerIndex);
         }
 
 
@@ -156,23 +144,21 @@ namespace TBS
             var position = new Vector2(0f, 175f);
 
             // update each menu entry's location in turn
-            for (var i = 0; i < menuEntries.Count; i++)
+            foreach (var menuEntry in _menuEntries)
             {
-                var menuEntry = menuEntries[i];
-                
-                // each entry is to be centered horizontally
-                position.X = ScreenManager.GraphicsDevice.Viewport.Width / 2 - menuEntry.GetWidth(this) / 2;
+	            // each entry is to be centered horizontally
+	            position.X = ScreenManager.GraphicsDevice.Viewport.Width / 2 - menuEntry.GetWidth(this) / 2;
 
-                if (ScreenState == ScreenState.TransitionOn)
-                    position.X -= transitionOffset * 256;
-                else
-                    position.X += transitionOffset * 512;
+	            if (ScreenState == ScreenState.TransitionOn)
+		            position.X -= transitionOffset * 256;
+	            else
+		            position.X += transitionOffset * 512;
 
-                // set the entry's position
-                menuEntry.Position = position;
+	            // set the entry's position
+	            menuEntry.Position = position;
 
-                // move down for the next entry the size of this entry
-                position.Y += menuEntry.GetHeight(this);
+	            // move down for the next entry the size of this entry
+	            position.Y += menuEntry.GetHeight(this);
             }
         }
 
@@ -186,8 +172,8 @@ namespace TBS
             base.Update(gameTime, otherScreenHasFocus, coveredByOtherScreen);
 
             // Update each nested MenuEntry object.
-            for (var i = 0; i < menuEntries.Count; i++)
-				menuEntries[i].Update(this, IsActive && i == selectedEntry, gameTime);
+            for (var i = 0; i < _menuEntries.Count; i++)
+				_menuEntries[i].Update(this, IsActive && i == _selectedEntry, gameTime);
         }
 
 
@@ -206,10 +192,10 @@ namespace TBS
             spriteBatch.Begin();
 
             // Draw each menu entry in turn.
-            for (var i = 0; i < menuEntries.Count; i++)
+            for (var i = 0; i < _menuEntries.Count; i++)
             {
-                var menuEntry = menuEntries[i];
-				var isSelected = IsActive && (i == selectedEntry);
+                var menuEntry = _menuEntries[i];
+				var isSelected = IsActive && (i == _selectedEntry);
 
                 menuEntry.Draw(this, isSelected, gameTime);
             }
@@ -220,14 +206,14 @@ namespace TBS
             var transitionOffset = (float)Math.Pow(TransitionPosition, 2);
 
             // Draw the menu title centered on the screen
-            var titlePosition = new Vector2(graphics.Viewport.Width / 2, 80);
-            var titleOrigin = font.MeasureString(menuTitle) / 2;
+            var titlePosition = new Vector2(graphics.Viewport.Width / 2f, 80);
+            var titleOrigin = font.MeasureString(_menuTitle) / 2;
             var titleColor = new Color(192, 192, 192) * TransitionAlpha;
             const float titleScale = 1.25f;
 
             titlePosition.Y -= transitionOffset * 100;
 
-            spriteBatch.DrawString(font, menuTitle, titlePosition, titleColor, 0,
+            spriteBatch.DrawString(font, _menuTitle, titlePosition, titleColor, 0,
                                    titleOrigin, titleScale, SpriteEffects.None, 0);
 
             spriteBatch.End();
