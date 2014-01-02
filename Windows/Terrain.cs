@@ -32,5 +32,9 @@ namespace TBS
 		{
 			return (Type == "Sea" || Type == "Bridge");
 		}
+		public bool IsRoad()
+		{
+			return (Type == "Road" || Type == "Bridge");
+		}
 	}
 }

@@ -6,11 +6,11 @@ namespace TBS
 	{
 		public int Number { get; private set; }
 		public bool IsAI { get; private set; }
-		public int Money { get; private set; }
+		public int Money { get; set; }
 		public List<Building> Buildings { get; private set; }
 		public List<Unit> Units { get; private set; }
 
-		public Player(int number, bool isAI, int money = 3000)
+		public Player(int number, bool isAI, int money = 0)
 		{
 			Number = number;
 			IsAI = isAI;

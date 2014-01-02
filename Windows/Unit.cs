@@ -62,10 +62,11 @@ namespace TBS
 		public Weapon MainWeapon { get; private set; }
 		public Weapon SecondaryWeapon { get; private set; }
 		public Building Capturing { get; private set; }
+		public string Building { get; private set; }
 
 		public Unit(string type, Player player, Vector2 position, int movingDistance, int visionDistance,
 					bool canCapture, int price, int ammo, int rangeMin, int rangeMax, int gas,
-					MoveType moveType, UnitType unitType, Weapon weapon1, Weapon weapon2)
+					MoveType moveType, UnitType unitType, Weapon weapon1, Weapon weapon2, string building)
 		{
 			Type = type;
 			MovingDistance = movingDistance;
@@ -86,6 +87,7 @@ namespace TBS
 			MainWeapon = weapon1;
 			SecondaryWeapon = weapon2;
 			Capturing = null;
+			Building = building;
 		}
 
 		public void Move(Vector2 position)

@@ -12,7 +12,8 @@
 		Ammo="-1"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="True" />
+    CanCapture="True"
+    Building="Factory" />
   <Unit
 		Name="Mech"
 		Price="2500"
@@ -26,7 +27,8 @@
 		Ammo="3"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="True" />
+    CanCapture="True"
+    Building="Factory" />
   <Unit
 		Name="Bike"
 		Price="2500"
@@ -40,7 +42,8 @@
 		Ammo="-1"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="True" />
+    CanCapture="True"
+    Building="Factory" />
   <Unit
 		Name="Recon"
 		Price="4000"
@@ -54,7 +57,8 @@
 		Ammo="-1"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Flare"
 		Price="5000"
@@ -68,7 +72,8 @@
 		Ammo="3"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Anti-Air"
 		Price="7000"
@@ -82,7 +87,8 @@
 		Ammo="6"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Tank"
 		Price="7000"
@@ -96,7 +102,8 @@
 		Ammo="6"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Artillery"
 		Price="6000"
@@ -110,7 +117,8 @@
 		Ammo="6"
 		AttackRangeMin="2"
 		AttackRangeMax="3"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Medium Tank"
 		Price="12000"
@@ -124,7 +132,8 @@
 		Ammo="5"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Anti-Tank"
 		Price="11000"
@@ -138,7 +147,8 @@
 		Ammo="5"
 		AttackRangeMin="1"
 		AttackRangeMax="3"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Rockets"
 		Price="15000"
@@ -152,7 +162,8 @@
 		Ammo="5"
 		AttackRangeMin="3"
 		AttackRangeMax="5"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Missiles"
 		Price="12000"
@@ -166,7 +177,8 @@
 		Ammo="5"
 		AttackRangeMin="3"
 		AttackRangeMax="6"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Rig"
 		Price="5000"
@@ -180,7 +192,8 @@
 		Ammo="1"
 		AttackRangeMin="-1"
 		AttackRangeMax="-1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="War Tank"
 		Price="16000"
@@ -194,7 +207,8 @@
 		Ammo="5"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Factory" />
   <Unit
 		Name="Battle Copter"
 		Price="9000"
@@ -208,5 +222,6 @@
 		Ammo="6"
 		AttackRangeMin="1"
 		AttackRangeMax="1"
-    CanCapture="False" />
+    CanCapture="False"
+    Building="Airport" />
 </Units>

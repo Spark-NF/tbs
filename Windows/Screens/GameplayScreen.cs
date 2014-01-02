@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -23,9 +24,9 @@ namespace TBS.Screens
 		private readonly Vector2 _nullCursor;
 
 		private Sprite _cursor, _move, _attack;
-	    private Sprite[] _texturesBuildings;
 	    private int _gridWidth, _gridHeight;
-	    private readonly Terrain[] _terrains;
+		private readonly Terrain[] _terrains;
+		private readonly Dictionary<string, Sprite> _texturesBuildings = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsPreview = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
@@ -47,6 +48,7 @@ namespace TBS.Screens
 	    private Unit _attacksShowing;
 
 		private bool _showContextMenu;
+	    private string _contextMenuContext;
 	    private string[] _contextMenus;
 		private Point _contextMenuPos;
 	    private int _contextMaxWidth;
@@ -57,7 +59,7 @@ namespace TBS.Screens
 		private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
 		private List<Node> _movePath;
 
-	    public GameplayScreen()
+	    public GameplayScreen(string map)
         {
 		    TransitionOnTime = TimeSpan.FromSeconds(1.5);
 			TransitionOffTime = TimeSpan.FromSeconds(0.5);
@@ -86,52 +88,38 @@ namespace TBS.Screens
 			    new Terrain("Mist", true, 0, -1, -1, -1, -1, -1, 1, 1, 1),
 			    new Terrain("Reef", true, 0, -1, -1, -1, -1, -1, 1, 2, 2)*/
 		    };
-			const string terrain = "666666666666666\n" +
-			                       "660211711020006\n" +
-								   "600212601000006\n" +
-								   "600116661030106\n" +
-								   "600106661030106\n" +
-								   "601106621111106\n" +
-								   "600000022066166\n" +
-								   "660000000066006\n" +
-								   "666630320010006\n" +
-								   "666666666666666\n";
-			const string buildings = "1,11,2,2\n" +
-									 "1,13,2,2\n" +
-									 "2,9,0,1\n" +
-									 "2,12,2,0\n" +
-									 "2,13,2,2\n" +
-									 "3,1,0,1\n" +
-									 "3,2,0,1\n" +
-									 "3,13,2,2\n" +
-									 "4,9,0,1\n" +
-									 "4,11,0,1\n" +
-									 "5,1,1,2\n" +
-									 "5,4,0,1\n" +
-									 "5,13,0,1\n" +
-									 "6,1,1,2\n" +
-									 "6,2,1,0\n" +
-									 "7,2,1,2\n" +
-									 "7,3,1,2\n" +
-									 "8,5,0,1\n" +
-									 "8,8,0,1\n" +
-									 "8,12,0,1\n" +
-									 "8,13,0,1\n";
-			var lines = terrain.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-	        _mapHeight = lines.Length;
-	        _mapWidth = lines[0].Trim().Length;
-			_mapBuildings = new Building[_mapHeight, _mapWidth];
+
+			// Load map data from TXT file
+		    var flines = File.ReadLines("Content/Maps/" + map + ".txt")
+				.Where(l => l.Length != 0 && !l.StartsWith("#"))
+				.ToList();
+			//_mapName = flines[0].Trim();
+			_mapWidth = Convert.ToInt32(flines[1].Trim());
+			_mapHeight = Convert.ToInt32(flines[2].Trim());
+			var terrainLines = new string[_mapHeight];
+		    var read = 0;
+			for (var i = 3; i < _mapHeight + 3; ++i)
+		    {
+				var line = flines[i].Trim();
+				terrainLines[read++] = line;
+		    }
+		    var buildings = flines;
+			buildings.RemoveRange(0, _mapHeight + 3);
+
+			// Generate terrain according to map data
 			_mapTerrains = new Terrain[_mapHeight, _mapWidth];
 			for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
-					_mapTerrains[y, x] = _terrains[lines[y][x] - '0'];
-		    var bldngs = buildings.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+					_mapTerrains[y, x] = _terrains[terrainLines[y][x] - '0'];
+
+			var bOrder = new[] { "Headquarter", "City", "Factory", "Port", "Airport" };
 			_mapBuildings = new Building[_mapHeight, _mapWidth];
-		    foreach (var data in bldngs.Select(b => b.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
+			foreach (var data in buildings.Select(b => b.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
 		    {
 			    var p = Convert.ToInt32(data[2]);
-				_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(Convert.ToInt32(data[3]), p == 0 ? null : _players[p - 1]);
+				_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
 		    }
+
 		    _availableMoves = new bool[_mapHeight, _mapWidth];
 			_availableAttacks = new int[_mapHeight, _mapWidth];
 			_units = new List<Unit>();
@@ -156,22 +144,22 @@ namespace TBS.Screens
 			_capturing = new Sprite(_content.Load<Texture2D>("Capturing"));
 
 	        _terrains[0].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Plains"));
-			_terrains[1].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Road"));
+			_terrains[1].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Road"), 16);
 			_terrains[2].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Wood"));
 			_terrains[3].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Mountain"));
 			_terrains[4].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Wasteland"));
 			_terrains[5].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Ruins"));
 			_terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Sea"), 16);
-			_terrains[7].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"));
+			_terrains[7].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"), 16);
 			_gridWidth = _terrains[0].Texture.Texture.Width;
 			_gridHeight = _terrains[0].Texture.Texture.Width;
 
-			_texturesBuildings = new[]
-			{
-				new Sprite(_content.Load<Texture2D>("Buildings/Headquarters"), 5, 4),
-				new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 4),
-				new Sprite(_content.Load<Texture2D>("Buildings/Base"), 5, 4)
-			};
+			_texturesBuildings.Add("Headquarter", new Sprite(_content.Load<Texture2D>("Buildings/Headquarter"), 5, 4));
+			_texturesBuildings.Add("City", new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 4));
+			_texturesBuildings.Add("Factory", new Sprite(_content.Load<Texture2D>("Buildings/Factory"), 5, 4));
+			_texturesBuildings.Add("Port", new Sprite(_content.Load<Texture2D>("Buildings/Port"), 5, 4));
+			_texturesBuildings.Add("Airport", new Sprite(_content.Load<Texture2D>("Buildings/Airport"), 5, 4));
+
 	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 6, 3, 200));
 	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 6, 3, 200));
 			_texturesUnitsSmall.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 6, 3, 200));
@@ -237,8 +225,8 @@ namespace TBS.Screens
 			// Update textures for animations
 			for (var i = 0; i < _terrains.GetLength(0); ++i)
 				_terrains[i].Texture.Update(gameTime);
-			for (var i = 0; i < _texturesBuildings.GetLength(0); ++i)
-				_texturesBuildings[i].Update(gameTime);
+			for (var i = 0; i < _texturesBuildings.Count; ++i)
+				_texturesBuildings.Values.ElementAt(i).Update(gameTime);
 			for (var i = 0; i < _texturesUnitsBig.Count; ++i)
 				_texturesUnitsBig.Values.ElementAt(i).Update(gameTime);
 			for (var i = 0; i < _texturesUnitsPreview.Count; ++i)
@@ -255,8 +243,22 @@ namespace TBS.Screens
 			    var rect = ContextMenuRect(5, _camera);
 			    if (rect.Contains(Souris.Get().Position))
 			    {
-					var selected = _contextMenus[(int)Math.Floor((double)(Souris.Get().Y - rect.Y) / 30f)];
-					if (selected == "Move")
+				    var index = (int)Math.Floor((double)(Souris.Get().Y - rect.Y) / 30f);
+					var selected = _contextMenus[index];
+				    if (_contextMenuContext == "Build")
+					{
+						if (selected != "Cancel")
+						{
+							var unit = UnitCreator.Unit(
+								selected.Substring(0, selected.IndexOf(" - ", StringComparison.Ordinal)),
+								_players[_currentPlayer - 1],
+								_cursorPos,
+								true);
+							unit.Moved = true;
+							_units.Add(unit);
+						}
+					}
+					else if (selected == "Move")
 					{
 						_selectedUnit.Move(_cursorPos);
 						_availableMoves = new bool[_mapHeight, _mapWidth];
@@ -312,7 +314,7 @@ namespace TBS.Screens
 	        {
 		        var curPos = new Vector2((int)((Souris.Get().X + _camera.X) / _gridWidth), (int)((Souris.Get().Y + _camera.Y) / _gridHeight));
 		        _cursorPos = Souris.Get().X + _camera.X >= 0 && Souris.Get().Y + _camera.Y >= 0
-		                     && curPos.X < _mapTerrains.GetLength(0) && curPos.Y < _mapTerrains.GetLength(1)
+		                     && curPos.X < _mapWidth && curPos.Y < _mapHeight
 						   ? curPos
 						   : _nullCursor;
 	        }
@@ -393,6 +395,7 @@ namespace TBS.Screens
 				var unitUnder = _units.FirstOrDefault(t =>
 					Math.Abs(t.Position.X - _cursorPos.X) < 0.1
 					&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
+				var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
 		        if (Souris.Get().Clicked(MouseButton.Left) && (_selectedUnit == null || _selectedUnit.Moved) && unitUnder != null && !unitUnder.Moved && unitUnder.Player.Number == _currentPlayer)
 		        {
 			        _selectedUnit = unitUnder;
@@ -400,8 +403,8 @@ namespace TBS.Screens
 					_availableMoves = new bool[_mapHeight, _mapWidth];
 			        _availableMoves[(int)_selectedUnit.Position.Y, (int)_selectedUnit.Position.X] = true;
 			        var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-			        for (var y = (int)Math.Max(_selectedUnit.Position.Y - _selectedUnit.MovingDistance, 0); y <= (int)Math.Min(_selectedUnit.Position.Y + _selectedUnit.MovingDistance, _mapTerrains.GetLength(1) - 1); ++y)
-				        for (var x = (int)Math.Max(_selectedUnit.Position.X - _selectedUnit.MovingDistance, 0); x <= (int)Math.Min(_selectedUnit.Position.X + _selectedUnit.MovingDistance, _mapTerrains.GetLength(0) - 1); ++x)
+			        for (var y = (int)Math.Max(_selectedUnit.Position.Y - _selectedUnit.MovingDistance, 0); y <= (int)Math.Min(_selectedUnit.Position.Y + _selectedUnit.MovingDistance, _mapHeight - 1); ++y)
+				        for (var x = (int)Math.Max(_selectedUnit.Position.X - _selectedUnit.MovingDistance, 0); x <= (int)Math.Min(_selectedUnit.Position.X + _selectedUnit.MovingDistance, _mapWidth - 1); ++x)
 				        {
 					        var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point(x, y));
 					        if (nodes != null && nodes.Any() && nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance)
@@ -412,36 +415,48 @@ namespace TBS.Screens
 					&& _selectedUnit != null && !_selectedUnit.Moved
 					&& (_availableMoves[(int)_cursorPos.Y, (int)_cursorPos.X] || _availableAttacks[(int)_cursorPos.Y, (int)_cursorPos.X] == 2))
 				{
-					var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
 			        if (unitUnder == null)
 			        {
 						if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
-							SetContextMenu("Capture", "Move", "Cancel");
+							SetContextMenu("Capture", "Capture", "Move", "Cancel");
 						else
-							SetContextMenu("Move", "Cancel");
+							SetContextMenu("Move", "Move", "Cancel");
 			        }
 			        else if (unitUnder.Player != _selectedUnit.Player)
-				        SetContextMenu("Attack", "Cancel");
+						SetContextMenu("Attack", "Attack", "Cancel");
 			        else if (unitUnder == _selectedUnit)
 			        {
 				        if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
-							SetContextMenu("Capture", "Wait", "Cancel");
+							SetContextMenu("Capture", "Capture", "Wait", "Cancel");
 				        else
-					        SetContextMenu("Wait", "Cancel");
+							SetContextMenu("Wait", "Wait", "Cancel");
 			        }
 			        else if (unitUnder.Type == _selectedUnit.Type)
-				        SetContextMenu("Merge", "Cancel");
+						SetContextMenu("Merge", "Merge", "Cancel");
 				}
 				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left)
 					&& (unitUnder == null || unitUnder.Moved || unitUnder.Player.Number != _currentPlayer))
 				{
-					if (_selectedUnit != null)
+					if (_selectedUnit == null && buildingUnder != null && unitUnder == null
+						&& buildingUnder.Player != null && buildingUnder.Player.Number == _currentPlayer)
+					{
+						SetContextMenu(
+							"Build",
+							"Infantry - " + UnitCreator.Price("Infantry") + " €",
+							"Mech - " + UnitCreator.Price("Mech") + " €",
+							"Bike - " + UnitCreator.Price("Bike") + " €",
+							"Artillery - " + UnitCreator.Price("Artillery") + " €",
+							"Battle Copter - " + UnitCreator.Price("Battle Copter") + " €",
+							"Cancel"
+						);
+					}
+					else if (_selectedUnit != null)
 					{
 						_selectedUnit = null;
 						_movePath = null;
 					}
 					else
-						SetContextMenu("End turn");
+						SetContextMenu("End turn", "End turn");
 				}
 	        }
         }
@@ -504,7 +519,11 @@ namespace TBS.Screens
 				for (var x = 0; x < _mapWidth; ++x)
 				{
 					var terrain = _mapTerrains[y, x];
-					var tex = terrain.Type == "Bridge" ? _terrains[6].Texture : terrain.Texture;
+					var tex = terrain.Type == "Bridge"
+						? _terrains[6].Texture
+						: (terrain.Type == "Road"
+							? _terrains[0].Texture
+							: terrain.Texture);
 					tex.Draw(
 						spriteBatch,
 						y / 100f,
@@ -517,13 +536,19 @@ namespace TBS.Screens
 							  + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsSea() ? 2 : 0)
 							  + (x > 0 && !_mapTerrains[y, x - 1].IsSea() ? 1 : 0)
 							: 0);
-					if (terrain.Type == "Bridge")
+					if (terrain.Type == "Bridge" || terrain.Type == "Road")
 						_mapTerrains[y, x].Texture.Draw(
 							spriteBatch,
-							y / 100f,
+							y / 100f + 0.001f,
 							new Vector2(
 								_gridWidth * x - _camera.X,
-								_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height));
+								_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
+							terrain.Type == "Road" || terrain.Type == "Bridge"
+								? (y > 0 && !_mapTerrains[y - 1, x].IsRoad() ? 8 : 0)
+								  + (x < _mapWidth - 1 && !_mapTerrains[y, x + 1].IsRoad() ? 4 : 0)
+								  + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsRoad() ? 2 : 0)
+								  + (x > 0 && !_mapTerrains[y, x - 1].IsRoad() ? 1 : 0)
+								: 0);
 				}
 
 	        // Draw available displacements
@@ -696,8 +721,9 @@ namespace TBS.Screens
 				10 + 30 * _contextMenus.Length - dec * 2);
 	    }
 
-	    private void SetContextMenu(params string[] menus)
+	    private void SetContextMenu(string context, params string[] menus)
 	    {
+		    _contextMenuContext = context;
 		    _contextMenus = menus;
 		    _showContextMenu = true;
 			_contextMenuPos = new Point(Souris.Get().X + (int)_camera.X, Souris.Get().Y + (int)_camera.Y);
@@ -720,8 +746,8 @@ namespace TBS.Screens
 			    _turn++;
 		    }
 
-		    for (var y = 0; y < _mapTerrains.GetLength(0); ++y)
-				for (var x = 0; x < _mapTerrains.GetLength(1); ++x)
+		    for (var y = 0; y < _mapHeight; ++y)
+				for (var x = 0; x < _mapWidth; ++x)
 					if (_mapBuildings[y, x] != null)
 						_mapBuildings[y, x].NextTurn();
 
@@ -740,10 +766,10 @@ namespace TBS.Screens
 			_availableAttacks = new int[_mapHeight, _mapWidth];
 			var pf = new AStar(_mapTerrains, _units, unit);
 			for (var y = (int)Math.Max(unit.Position.Y - unit.MovingDistance, 0);
-				y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapTerrains.GetLength(1) - 1);
+				y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapHeight - 1);
 				++y)
 				for (var x = (int)Math.Max(unit.Position.X - unit.MovingDistance, 0);
-					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapTerrains.GetLength(0) - 1);
+					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapWidth - 1);
 					++x)
 				{
 					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y));
@@ -754,9 +780,9 @@ namespace TBS.Screens
 					if (nodes != null && nodes.Any() && nodes.Last().Occupied)
 						continue;
 					var ymin = Math.Max(y - unit.RangeMax, 0);
-					var ymax = Math.Min(y + unit.RangeMax, _mapTerrains.GetLength(1) - 1);
+					var ymax = Math.Min(y + unit.RangeMax, _mapHeight - 1);
 					var xmin = Math.Max(x - unit.RangeMax, 0);
-					var xmax = Math.Min(x + unit.RangeMax, _mapTerrains.GetLength(0) - 1);
+					var xmax = Math.Min(x + unit.RangeMax, _mapWidth - 1);
 					for (var iy = ymin; iy <= ymax; ++iy)
 						for (var ix = xmin; ix <= xmax; ++ix)
 							if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unit.RangeMax && Math.Abs(y - iy) + Math.Abs(x - ix) >= unit.RangeMin)

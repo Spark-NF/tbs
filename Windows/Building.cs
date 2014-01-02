@@ -4,7 +4,7 @@ namespace TBS
 {
 	class Building
 	{
-		public int Type { get; set; }
+		public string Type { get; set; }
 		private int _previousCaptureStatus;
 		public int CaptureStatus { get; private set; }
 		private Player _player;
@@ -21,7 +21,7 @@ namespace TBS
 			}
 		}
 
-		public Building(int type, Player player)
+		public Building(string type, Player player)
 		{
 			Type = type;
 			_player = player;

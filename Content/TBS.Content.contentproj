@@ -46,11 +46,6 @@
     <Reference Include="MonoGameContentProcessors">
       <HintPath>$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGameContentProcessors.dll</HintPath>
     </Reference>
-    <Compile Include="Buildings\Headquarters.png">
-      <Name>Headquarters</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>MGTextureProcessor</Processor>
-    </Compile>
     <Compile Include="Units\Big\Bazooka1.png">
       <Name>Bazooka1</Name>
       <Importer>TextureImporter</Importer>
@@ -352,13 +347,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Buildings\Base.png">
-      <Name>Base</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Terrains\Medium\Sea.png">
       <Name>Sea</Name>
       <Importer>TextureImporter</Importer>
@@ -368,6 +356,30 @@
   <ItemGroup>
     <Compile Include="Terrains\Medium\Bridge.png">
       <Name>Bridge</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Buildings\Airport.png">
+      <Name>Airport</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Buildings\Headquarter.png">
+      <Name>Headquarter</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Buildings\Port.png">
+      <Name>Port</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Buildings\Factory.png">
+      <Name>Factory</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>

@@ -1,8 +1,4 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-*.cachefile
+﻿*.cachefile
 *.user
 *.db
 /GameName1/GameName1Content/obj
@@ -11,3 +7,4 @@
 /TBS/bin/Windows/Debug
 /TBS/obj/x86/Debug
 *.suo
+*.xnb
