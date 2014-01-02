@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using Microsoft.Xna.Framework;
 
 namespace TBS
@@ -108,6 +109,18 @@ namespace TBS
 			var ol = other.Life;
 			other.Life -= Life / 2;
 			Life -= ol / 3;
+
+			if (other.Life <= 0)
+				other.Die();
+			if (Life <= 0)
+				Die();
+		}
+
+		public void Die()
+		{
+			Player.Units.Remove(this);
+			if (Capturing != null)
+				Capturing.StopCapture();
 		}
 
 		public void Capture(Building target)
