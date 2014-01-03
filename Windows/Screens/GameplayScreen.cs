@@ -31,13 +31,15 @@ namespace TBS.Screens
 		private readonly Dictionary<string, Sprite> _texturesUnitsPreview = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
 		private Texture2D _backgroundTexture;
-		private SpriteFont _font, _fontDebug;
+		private SpriteFont _font, _fontDebug, _fontPopup;
 	    private Sprite _fontLife, _capturing;
 		private Vector2 _cursorPos, _curMovePath;
 		private Unit _selectedUnit;
 		private int _currentPlayer;
 		private int _turn;
 	    private readonly int _mapHeight, _mapWidth;
+
+		private Sprite _popupLeft, _popupMid, _popupRight, _popupLeftOn, _popupMidOn, _popupRightOn;
 
 	    private Vector2 _camera;
 		private readonly Player[] _players;
@@ -215,7 +217,15 @@ namespace TBS.Screens
 
 			_font = _content.Load<SpriteFont>("Fonts/Game");
 			_fontDebug = _content.Load<SpriteFont>("Fonts/Debug");
+			_fontPopup = _content.Load<SpriteFont>("Fonts/Popup");
 			_fontLife = new Sprite(_content.Load<Texture2D>("Fonts/Life"), 12);
+
+			_popupLeft = new Sprite(_content.Load<Texture2D>("Popup/Left"));
+			_popupLeftOn = new Sprite(_content.Load<Texture2D>("Popup/LeftOn"));
+			_popupMid = new Sprite(_content.Load<Texture2D>("Popup/Mid"));
+			_popupMidOn = new Sprite(_content.Load<Texture2D>("Popup/MidOn"));
+			_popupRight = new Sprite(_content.Load<Texture2D>("Popup/Right"));
+			_popupRightOn = new Sprite(_content.Load<Texture2D>("Popup/RightOn"));
 
 			GC.Collect();
             ScreenManager.Game.ResetElapsedTime();
@@ -274,10 +284,10 @@ namespace TBS.Screens
 		    var noSelect = false;
 		    if (_showContextMenu && Souris.Get().Clicked(MouseButton.Left))
 		    {
-			    var rect = ContextMenuRect(5, _camera);
+				var rect = new Rectangle(_contextMenuPos.X + 2 - (int)_camera.X, _contextMenuPos.Y + 2 - (int)_camera.Y, _contextMaxWidth + 2 + _popupLeft.Width + _popupRight.Width, 16 * _contextMenus.Length);
 			    if (rect.Contains(Souris.Get().Position))
 			    {
-				    var index = (int)Math.Floor((double)(Souris.Get().Y - rect.Y) / 30f);
+				    var index = (int)Math.Floor((double)(Souris.Get().Y - rect.Y) / 16f);
 					var selected = _contextMenus[index];
 				    if (_contextMenuContext == "Build")
 					{
@@ -288,8 +298,11 @@ namespace TBS.Screens
 								_players[_currentPlayer - 1],
 								_cursorPos,
 								true);
-							unit.Moved = true;
-							_units.Add(unit);
+							if (unit != null)
+							{
+								unit.Moved = true;
+								_units.Add(unit);
+							}
 						}
 					}
 					else if (selected == "Move")
@@ -478,17 +491,19 @@ namespace TBS.Screens
 					&& (unitUnder == null || unitUnder.Moved || unitUnder.Player.Number != _currentPlayer))
 				{
 					if (_selectedUnit == null && buildingUnder != null && unitUnder == null
-						&& buildingUnder.Player != null && buildingUnder.Player.Number == _currentPlayer)
+					    && buildingUnder.Player != null && buildingUnder.Player.Number == _currentPlayer)
 					{
-						SetContextMenu(
-							"Build",
-							"Infantry - " + UnitCreator.Price("Infantry") + " €",
-							"Mech - " + UnitCreator.Price("Mech") + " €",
-							"Bike - " + UnitCreator.Price("Bike") + " €",
-							"Artillery - " + UnitCreator.Price("Artillery") + " €",
-							"Battle Copter - " + UnitCreator.Price("Battle Copter") + " €",
-							"Cancel"
-						);
+						var prices = UnitCreator.GetPrices(buildingUnder.Type);
+						if (prices.Count > 0)
+						{
+							var buy = new string[prices.Count + 1];
+							for (var i = 0; i < prices.Count; ++i)
+								buy[i] = prices.Keys.ElementAt(i) + " - " + prices.Values.ElementAt(i) + " €";
+							buy[prices.Count] = "Cancel";
+							SetContextMenu("Build", buy);
+						}
+						else
+							SetContextMenu("End turn", "End turn");
 					}
 					else if (_selectedUnit != null)
 					{
@@ -586,7 +601,9 @@ namespace TBS.Screens
 							_gridWidth * x - _camera.X,
 							_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
 						number);
-					if (terrain.Type == "Mist" || terrain.Type == "BridgeSea" || terrain.Type == "BridgeRiver" || terrain.Type == "Road")
+					if ((terrain.Type == "Mist" || terrain.Type == "BridgeSea"
+						|| terrain.Type == "BridgeRiver" || terrain.Type == "Road")
+						&& _mapBuildings[y, x] == null)
 						_mapTerrains[y, x].Texture.Draw(
 							spriteBatch,
 							y / 100f + 0.101f,
@@ -697,10 +714,10 @@ namespace TBS.Screens
 			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 220, 39), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
 			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 221, 38), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
 			
-			// Context menu
+			// Context menu (popup)
 	        if (_showContextMenu)
 			{
-				spriteBatch.Draw(
+				/*spriteBatch.Draw(
 					Color2Texture2D(new Color(.3f, .3f, .3f)),
 					ContextMenuRect(0, _camera),
 					new Rectangle(0, 0, 1, 1),
@@ -717,11 +734,17 @@ namespace TBS.Screens
 					0f,
 					Vector2.Zero,
 					SpriteEffects.None,
-					0.955f);
+					0.955f);*/
 				for (var i = 0; i < _contextMenus.Length; ++i)
 				{
-					spriteBatch.DrawString(_font, _contextMenus[i], new Vector2(_contextMenuPos.X + 9, _contextMenuPos.Y + 30 * i + 5) - _camera, Color.LightGray, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
-					spriteBatch.DrawString(_font, _contextMenus[i], new Vector2(_contextMenuPos.X + 8, _contextMenuPos.Y + 30 * i + 4) - _camera, Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.96f);
+					var on = new Rectangle(_contextMenuPos.X + 2 - (int)_camera.X, _contextMenuPos.Y + 2 + 16 * i - (int)_camera.Y, _contextMaxWidth + 2 + _popupLeft.Width + _popupRight.Width, 16).Contains(Souris.Get().Position);
+					var dec = on ? 0.001f : 0;
+					(on ? _popupLeftOn : _popupLeft).Draw(spriteBatch, 0.94f + dec, new Vector2(_contextMenuPos.X, _contextMenuPos.Y + 16 * i) - _camera);
+					for (var j = 0; j < _contextMaxWidth + 2; ++j)
+						(on ? _popupMidOn : _popupMid).Draw(spriteBatch, 0.94f + dec, new Vector2(_contextMenuPos.X + j + _popupLeft.Width, _contextMenuPos.Y + 16 * i) - _camera);
+					(on ? _popupRightOn : _popupRight).Draw(spriteBatch, 0.94f + dec, new Vector2(_contextMenuPos.X + _contextMaxWidth + 2 + _popupLeft.Width, _contextMenuPos.Y + 16 * i) - _camera);
+					spriteBatch.DrawString(_fontPopup, _contextMenus[i], new Vector2(_contextMenuPos.X + 9, _contextMenuPos.Y + 16 * i + 3) - _camera, Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+					spriteBatch.DrawString(_fontPopup, _contextMenus[i], new Vector2(_contextMenuPos.X + 8, _contextMenuPos.Y + 16 * i + 2) - _camera, Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.96f);
 				}
 	        }
 
@@ -742,12 +765,12 @@ namespace TBS.Screens
 				ScreenManager.FadeBackBufferToBlack(MathHelper.Lerp(1f - TransitionAlpha, 1f, _pauseAlpha / 2));
         }
 
-		private Texture2D Color2Texture2D(Color color)
+		/*private Texture2D Color2Texture2D(Color color)
 		{
 			if (!_colors.ContainsKey(color))
 				_colors.Add(color, CreateRectangle(1, 1, color));
 			return _colors[color];
-		}
+		}*/
 		private Texture2D CreateRectangle(int width, int height, Color col, Color border, int size = 1)
 		{
 			var rectangleTexture = new Texture2D(ScreenManager.GraphicsDevice, width, height, false, SurfaceFormat.Color);
@@ -762,30 +785,30 @@ namespace TBS.Screens
 		    return CreateRectangle(width, height, col, col);
 	    }
 
-		private Rectangle ContextMenuRect(int dec = 0, Vector2? camera = null)
+		/*private Rectangle ContextMenuRect(int dec = 0, Vector2? camera = null)
 	    {
 			return new Rectangle(
 				_contextMenuPos.X + dec - (camera.HasValue ? (int)camera.Value.X : 0),
 				_contextMenuPos.Y + dec - (camera.HasValue ? (int)camera.Value.Y : 0),
 				20 + _contextMaxWidth - dec * 2,
 				10 + 30 * _contextMenus.Length - dec * 2);
-	    }
+	    }*/
 
-	    private void SetContextMenu(string context, params string[] menus)
-	    {
-		    _contextMenuContext = context;
-		    _contextMenus = menus;
-		    _showContextMenu = true;
+		private void SetContextMenu(string context, params string[] menus)
+		{
+			_contextMenuContext = context;
+			_contextMenus = menus;
+			_showContextMenu = true;
 			_contextMenuPos = new Point(Souris.Get().X + (int)_camera.X, Souris.Get().Y + (int)_camera.Y);
 
-		    _contextMaxWidth = 0;
+			_contextMaxWidth = 0;
 			foreach (var m in menus)
-		    {
-			    var len = (int)_font.MeasureString(m).X;
+			{
+				var len = (int)_fontPopup.MeasureString(m).X;
 				if (len > _contextMaxWidth)
-				    _contextMaxWidth = len;
-		    }
-	    }
+					_contextMaxWidth = len;
+			}
+		}
 
 	    private void NextTurn()
 	    {

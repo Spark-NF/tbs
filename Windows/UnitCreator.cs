@@ -92,7 +92,11 @@ namespace TBS
 			var price = Convert.ToInt32(u.Attribute("Price").Value);
 
 			if (pay)
+			{
+				if (player.Money < price)
+					return null;
 				player.Money -= price;
+			}
 
 			return new Unit(
 				type,
