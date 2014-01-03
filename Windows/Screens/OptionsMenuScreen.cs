@@ -7,7 +7,7 @@ namespace TBS.Screens
 
 		static readonly string[] Languages = { "English" };
 		static int _currentLanguage;
-		static int _volume = 10;
+		//static int _volume = 10;
 
 		public OptionsMenuScreen() : base("Options")
 		{
@@ -33,11 +33,11 @@ namespace TBS.Screens
 			_currentLanguage = (_currentLanguage + 1) % Languages.Length;
 			SetMenuEntryText();
 		}
-		void VolumeMenuEntrySelected(object sender, PlayerIndexEventArgs e)
+		/*void VolumeMenuEntrySelected(object sender, PlayerIndexEventArgs e)
 		{
 			_volume = (_volume + 1) % 11;
 			SetMenuEntryText();
-		}
+		}*/
 
 		void SetMenuEntryText()
 		{

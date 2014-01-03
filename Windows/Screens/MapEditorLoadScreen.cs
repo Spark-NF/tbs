@@ -40,8 +40,8 @@ namespace TBS.Screens
 		}
 		void LoadMenuEntrySelected(object sender, PlayerIndexEventArgs e)
 		{
-			/*LoadingScreen.Load(ScreenManager, true, e.PlayerIndex,
-							   new MapEditorScreen(_maps[_currentMap]));*/
+			LoadingScreen.Load(ScreenManager, true, e.PlayerIndex,
+							   new MapEditorScreen(_maps[_currentMap]));
 		}
 
 		void SetMenuEntryText()

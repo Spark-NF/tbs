@@ -10,12 +10,7 @@ using TBS.ScreenManager;
 
 namespace TBS.Screens
 {
-    /// <summary>
-    /// This screen implements the actual game logic. It is just a
-    /// placeholder to get the idea across: you'll probably want to
-    /// put some more interesting gameplay in here!
-    /// </summary>
-    class GameplayScreen : GameScreen
+    class MapEditorScreen : GameScreen
     {
         ContentManager _content;
 		float _pauseAlpha;
@@ -44,11 +39,8 @@ namespace TBS.Screens
 	    private Vector2 _camera;
 		private readonly Player[] _players;
 		private readonly Terrain[,] _mapTerrains;
-		private bool[,] _availableMoves;
-		private int[,] _availableAttacks;
 		private readonly Building[,] _mapBuildings;
 	    private readonly List<Unit> _units;
-	    private Unit _attacksShowing;
 
 		private bool _showContextMenu;
 	    private string _contextMenuContext;
@@ -56,13 +48,7 @@ namespace TBS.Screens
 		private Point _contextMenuPos;
 	    private int _contextMaxWidth;
 
-		private int _fpsFrameRate;
-		private int _fpsFrameCounter;
-		private TimeSpan _fpsElapsed = TimeSpan.Zero;
-		//private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
-		private List<Node> _movePath;
-
-	    public GameplayScreen(string map)
+	    public MapEditorScreen(string map)
         {
 		    TransitionOnTime = TimeSpan.FromSeconds(1.5);
 			TransitionOffTime = TimeSpan.FromSeconds(0.5);
@@ -142,13 +128,7 @@ namespace TBS.Screens
 					_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
 			}
 
-		    _availableMoves = new bool[_mapHeight, _mapWidth];
-			_availableAttacks = new int[_mapHeight, _mapWidth];
 			_camera = new Vector2(-50, -80);
-			_turn = 1;
-			_currentPlayer = 1;
-			_players[_currentPlayer - 1].NextTurn();
-			_selectedUnit = null;
         }
 
         /// <summary>
@@ -257,15 +237,6 @@ namespace TBS.Screens
 		    if (!IsActive)
 			    return;
 
-		    // FPS counter
-		    _fpsElapsed += gameTime.ElapsedGameTime;
-		    if (_fpsElapsed > TimeSpan.FromSeconds(1))
-		    {
-			    _fpsElapsed -= TimeSpan.FromSeconds(1);
-			    _fpsFrameRate = _fpsFrameCounter;
-			    _fpsFrameCounter = 0;
-			}
-
 			// Update textures for animations
 			for (var i = 0; i < _terrains.GetLength(0); ++i)
 				_terrains[i].Texture.Update(gameTime);
@@ -289,68 +260,6 @@ namespace TBS.Screens
 			    {
 				    var index = (int)Math.Floor((double)(Souris.Get().Y - rect.Y) / 16f);
 					var selected = _contextMenus[index];
-				    if (_contextMenuContext == "Build")
-					{
-						if (selected != "Cancel")
-						{
-							var unit = UnitCreator.Unit(
-								selected.Substring(0, selected.IndexOf(" - ", StringComparison.Ordinal)),
-								_players[_currentPlayer - 1],
-								_cursorPos,
-								true);
-							if (unit != null)
-							{
-								unit.Moved = true;
-								_units.Add(unit);
-							}
-						}
-					}
-					else if (selected == "Move")
-					{
-						_selectedUnit.Move(_cursorPos);
-						_availableMoves = new bool[_mapHeight, _mapWidth];
-						_selectedUnit = null;
-						_movePath = null;
-					}
-					else if (selected == "Attack")
-					{
-						if (_movePath != null && _movePath.Count > 1)
-						{
-							_selectedUnit.Move(new Vector2(_movePath[_movePath.Count - 2].Position.X, _movePath[_movePath.Count - 2].Position.Y));
-							_availableMoves = new bool[_mapHeight, _mapWidth];
-						}
-						_selectedUnit.Moved = true;
-						var unitUnder = _units.FirstOrDefault(t =>
-							Math.Abs(t.Position.X - _cursorPos.X) < 0.1
-							&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
-						if (unitUnder != null)
-						{
-							_selectedUnit.Attack(unitUnder, _mapTerrains);
-							if (_selectedUnit.Life <= 0)
-								_units.Remove(_selectedUnit);
-							if (unitUnder.Life <= 0)
-								_units.Remove(unitUnder);
-						}
-						_selectedUnit = null;
-						_movePath = null;
-					}
-					else if (selected == "Capture")
-					{
-						_selectedUnit.Move(_cursorPos);
-						_availableMoves = new bool[_mapHeight, _mapWidth];
-						_selectedUnit.Capture(_mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X]);
-						_selectedUnit = null;
-						_movePath = null;
-					}
-					else if (selected == "Wait")
-					{
-						_selectedUnit.Move(_cursorPos);
-						_availableMoves = new bool[_mapHeight, _mapWidth];
-						_selectedUnit = null;
-						_movePath = null;
-					}
-					else if (selected == "End turn")
-						NextTurn();
 			    }
 				_showContextMenu = false;
 			    noSelect = true;
@@ -366,76 +275,6 @@ namespace TBS.Screens
 						   : _nullCursor;
 	        }
 
-			// Right click
-		    if (_attacksShowing != null && !Souris.Get().Pressed(MouseButton.Right))
-			{
-				_availableAttacks = new int[_mapHeight, _mapWidth];
-				_attacksShowing = null;
-		    }
-		    else if (Souris.Get().Clicked(MouseButton.Right))
-		    {
-			    if (_showContextMenu)
-				    _showContextMenu = false;
-			    else
-				{
-					var unitUnder = _units.FirstOrDefault(t =>
-						Math.Abs(t.Position.X - _cursorPos.X) < 0.1
-						&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
-					if (unitUnder != null)
-					{
-						_attacksShowing = unitUnder;
-						SetAvailableAttacks(unitUnder);
-					}
-					else
-					{
-						_selectedUnit = null;
-						_movePath = null;
-						_availableMoves = null;
-					}
-				}
-		    }
-
-			// Possible path to mouse
-			if (_selectedUnit != null && !_selectedUnit.Moved && _cursorPos != _nullCursor && _cursorPos != _curMovePath)
-			{
-				_curMovePath = _cursorPos;
-			    var init = new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y);
-			    if (_movePath != null && _movePath.Any())
-				{
-					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-				    var nodes = pf.FindPath(
-						_movePath.Last().Position,
-						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
-						(int)_movePath.Last().DistanceTraveled);
-					if (nodes != null && nodes.Any())
-					{
-						if (nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
-						{
-							nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
-							if (nodes != null && nodes.Any() &&
-							    (nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
-							     || nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
-							     && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
-								_movePath = nodes;
-						}
-						else
-							_movePath.AddRange(nodes);
-					}
-					else
-						_movePath = nodes;
-				}
-				if (_movePath == null || !_movePath.Any())
-				{
-					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-					var nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
-					if (nodes != null && nodes.Any() &&
-						(nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
-						|| nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
-						   && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
-						_movePath = nodes;
-			    }
-			}
-
 		    // Mouse click
 			if (Souris.Get().Clicked(MouseButton.Left) && _cursorPos != _nullCursor && !noSelect)
 	        {
@@ -443,76 +282,6 @@ namespace TBS.Screens
 					Math.Abs(t.Position.X - _cursorPos.X) < 0.1
 					&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
 				var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
-		        if (Souris.Get().Clicked(MouseButton.Left) && (_selectedUnit == null || _selectedUnit.Moved) && unitUnder != null && !unitUnder.Moved && unitUnder.Player.Number == _currentPlayer)
-		        {
-			        _selectedUnit = unitUnder;
-					SetAvailableAttacks(unitUnder);
-					_availableMoves = new bool[_mapHeight, _mapWidth];
-			        _availableMoves[(int)_selectedUnit.Position.Y, (int)_selectedUnit.Position.X] = true;
-			        var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-			        for (var y = (int)Math.Max(_selectedUnit.Position.Y - _selectedUnit.MovingDistance, 0); y <= (int)Math.Min(_selectedUnit.Position.Y + _selectedUnit.MovingDistance, _mapHeight - 1); ++y)
-				        for (var x = (int)Math.Max(_selectedUnit.Position.X - _selectedUnit.MovingDistance, 0); x <= (int)Math.Min(_selectedUnit.Position.X + _selectedUnit.MovingDistance, _mapWidth - 1); ++x)
-				        {
-					        var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point(x, y));
-					        if (nodes != null && nodes.Any() && nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance)
-						        _availableMoves[y, x] = true;
-				        }
-		        }
-				else if (!oldShow && Souris.Get().Clicked(MouseButton.Left)
-					&& _selectedUnit != null && !_selectedUnit.Moved
-					&& (_availableMoves[(int)_cursorPos.Y, (int)_cursorPos.X] || _availableAttacks[(int)_cursorPos.Y, (int)_cursorPos.X] == 2))
-				{
-			        if (unitUnder == null)
-			        {
-						if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
-							SetContextMenu("Capture", "Capture", "Move", "Cancel");
-						else
-							SetContextMenu("Move", "Move", "Cancel");
-			        }
-			        else if (unitUnder.Player != _selectedUnit.Player && _selectedUnit.CanMoveAndAttack())
-						SetContextMenu("Attack", "Attack", "Cancel");
-			        else if (unitUnder == _selectedUnit)
-			        {
-				        if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
-					        SetContextMenu("Capture", "Capture", "Wait", "Cancel");
-				        else
-				        {
-					        var inRange = false;
-							if (inRange)
-								SetContextMenu("Wait", "Attack", "Wait", "Cancel");
-							else
-								SetContextMenu("Wait", "Wait", "Cancel");
-				        }
-			        }
-			        else if (unitUnder.Type == _selectedUnit.Type)
-						SetContextMenu("Merge", "Merge", "Cancel");
-				}
-				else if (!oldShow && !_showContextMenu && Souris.Get().Clicked(MouseButton.Left)
-					&& (unitUnder == null || unitUnder.Moved || unitUnder.Player.Number != _currentPlayer))
-				{
-					if (_selectedUnit == null && buildingUnder != null && unitUnder == null
-					    && buildingUnder.Player != null && buildingUnder.Player.Number == _currentPlayer)
-					{
-						var prices = UnitCreator.GetPrices(buildingUnder.Type);
-						if (prices.Count > 0)
-						{
-							var buy = new string[prices.Count + 1];
-							for (var i = 0; i < prices.Count; ++i)
-								buy[i] = prices.Keys.ElementAt(i) + " - " + prices.Values.ElementAt(i) + " €";
-							buy[prices.Count] = "Cancel";
-							SetContextMenu("Build", buy);
-						}
-						else
-							SetContextMenu("End turn", "End turn");
-					}
-					else if (_selectedUnit != null)
-					{
-						_selectedUnit = null;
-						_movePath = null;
-					}
-					else
-						SetContextMenu("End turn", "End turn");
-				}
 	        }
         }
 
@@ -618,43 +387,6 @@ namespace TBS.Screens
 								: 0);
 				}
 
-	        // Draw available displacements
-			if (_selectedUnit != null && !_selectedUnit.Moved)
-				for (var y = 0; y < _mapHeight; ++y)
-					for (var x = 0; x < _mapWidth; ++x)
-						if (_availableMoves[y, x])
-							_move.Draw(
-								spriteBatch,
-								0.80f,
-								new Vector2(
-									_gridWidth * x - _camera.X,
-									_gridHeight * y - _camera.Y));
-
-			// Draw available attacks
-			for (var y = 0; y < _mapHeight; ++y)
-				for (var x = 0; x < _mapWidth; ++x)
-					if (_attacksShowing != null && _availableAttacks[y, x] != 0 && (_selectedUnit != _attacksShowing || _selectedUnit != null && _selectedUnit.Moved || !_availableMoves[y, x])
-						|| _selectedUnit != null && _availableAttacks[y, x] == 2)
-						_attack.Draw(
-							spriteBatch,
-							0.81f,
-							new Vector2(
-								_gridWidth * x - _camera.X,
-								_gridHeight * y - _camera.Y));
-
-			// Draw current moving path
-	        if (_movePath != null && _selectedUnit != null)
-			{
-				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
-				foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X] || _availableAttacks[n.Position.Y, n.Position.X] == 2))
-			        _attack.Draw(
-				        spriteBatch,
-				        0.82f,
-				        new Vector2(
-							_gridWidth * n.Position.X - _camera.X,
-							_gridHeight * n.Position.Y - _camera.Y));
-	        }
-
 			// Draw buildings
 			for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
@@ -707,12 +439,6 @@ namespace TBS.Screens
 	        }
 
 	        // User Interface (15px per number)
-			spriteBatch.DrawString(_font, "Day " + _turn, new Vector2(13, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
-			spriteBatch.DrawString(_font, "Day " + _turn, new Vector2(12, 8), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
-			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 220, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
-			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 221, 8), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
-			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 220, 39), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
-			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 221, 38), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
 			
 			// Context menu (popup)
 	        if (_showContextMenu)
@@ -730,12 +456,6 @@ namespace TBS.Screens
 				}
 	        }
 
-			// FPS Counter
-			_fpsFrameCounter++;
-			var str = string.Format("fps: {0} mem: {1} cam: ({2},{3}) trv: {4}", _fpsFrameRate, GC.GetTotalMemory(false), _camera.X, _camera.Y, _movePath != null && _movePath.Any() ? _movePath.Last().DistanceTraveled : -1);
-			spriteBatch.DrawString(_fontDebug, str, new Vector2(13, graphics.Viewport.Height - 27), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.999f);
-			spriteBatch.DrawString(_fontDebug, str, new Vector2(12, graphics.Viewport.Height - 28), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
-
 			// Cursor
 			if (_cursorPos != _nullCursor)
 				_cursor.Draw(spriteBatch, 0.899f, _cursorPos * _gridWidth - _camera);
@@ -746,35 +466,6 @@ namespace TBS.Screens
             if (TransitionPosition > 0 || _pauseAlpha > 0)
 				ScreenManager.FadeBackBufferToBlack(MathHelper.Lerp(1f - TransitionAlpha, 1f, _pauseAlpha / 2));
         }
-
-		/*private Texture2D Color2Texture2D(Color color)
-		{
-			if (!_colors.ContainsKey(color))
-				_colors.Add(color, CreateRectangle(1, 1, color));
-			return _colors[color];
-		}
-		private Texture2D CreateRectangle(int width, int height, Color col, Color border, int size = 1)
-		{
-			var rectangleTexture = new Texture2D(ScreenManager.GraphicsDevice, width, height, false, SurfaceFormat.Color);
-			var color = new Color[width * height];
-			for (var i = 0; i < color.Length; i++)
-				color[i] = (i < width * size || i >= color.Length - width * size || i % width < size || i % width >= width - size ? border : col);
-			rectangleTexture.SetData(color);
-			return rectangleTexture;
-		}
-	    private Texture2D CreateRectangle(int width, int height, Color col)
-	    {
-		    return CreateRectangle(width, height, col, col);
-	    }*/
-
-		/*private Rectangle ContextMenuRect(int dec = 0, Vector2? camera = null)
-	    {
-			return new Rectangle(
-				_contextMenuPos.X + dec - (camera.HasValue ? (int)camera.Value.X : 0),
-				_contextMenuPos.Y + dec - (camera.HasValue ? (int)camera.Value.Y : 0),
-				20 + _contextMaxWidth - dec * 2,
-				10 + 30 * _contextMenus.Length - dec * 2);
-	    }*/
 
 		private void SetContextMenu(string context, params string[] menus)
 		{
@@ -791,62 +482,5 @@ namespace TBS.Screens
 					_contextMaxWidth = len;
 			}
 		}
-
-	    private void NextTurn()
-	    {
-			_currentPlayer++;
-		    if (_currentPlayer > _players.Length)
-		    {
-			    _currentPlayer = 1;
-			    _turn++;
-		    }
-
-		    for (var y = 0; y < _mapHeight; ++y)
-				for (var x = 0; x < _mapWidth; ++x)
-					if (_mapBuildings[y, x] != null)
-						_mapBuildings[y, x].NextTurn();
-
-			foreach (var u in _units.Where(u => 
-					u.Player.Number == _currentPlayer
-					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X] != null
-					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X].Player == u.Player))
-				u.Heal();
-
-			_players[_currentPlayer - 1].NextTurn();
-			_showContextMenu = false;
-	    }
-
-	    private void SetAvailableAttacks(Unit unit)
-		{
-			_availableAttacks = new int[_mapHeight, _mapWidth];
-			var pf = new AStar(_mapTerrains, _units, unit);
-			for (var y = (int)Math.Max(unit.Position.Y - unit.MovingDistance, 0);
-				y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapHeight - 1);
-				++y)
-				for (var x = (int)Math.Max(unit.Position.X - unit.MovingDistance, 0);
-					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapWidth - 1);
-					++x)
-				{
-					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y));
-					if ((nodes == null || !nodes.Any()
-						 || !(nodes.Last().DistanceTraveled <= unit.MovingDistance)
-						 || !unit.CanMoveAndAttack()) && (y != (int)unit.Position.Y || x != (int)unit.Position.X))
-						continue;
-					if (nodes != null && nodes.Any() && nodes.Last().Occupied)
-						continue;
-					var ymin = Math.Max(y - unit.RangeMax, 0);
-					var ymax = Math.Min(y + unit.RangeMax, _mapHeight - 1);
-					var xmin = Math.Max(x - unit.RangeMax, 0);
-					var xmax = Math.Min(x + unit.RangeMax, _mapWidth - 1);
-					for (var iy = ymin; iy <= ymax; ++iy)
-						for (var ix = xmin; ix <= xmax; ++ix)
-							if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unit.RangeMax && Math.Abs(y - iy) + Math.Abs(x - ix) >= unit.RangeMin)
-								_availableAttacks[iy, ix] = _units.Any(t =>
-										t.Player != unit.Player
-										&& Math.Abs(t.Position.X - ix) < 0.1
-										&& Math.Abs(t.Position.Y - iy) < 0.1)
-									? 2 : 1;
-				}
-	    }
     }
 }
