@@ -50,6 +50,9 @@
     <Compile Include="Screens\GameSelectScreen.cs" />
     <Compile Include="Screens\LoadingScreen.cs" />
     <Compile Include="Screens\MainMenuScreen.cs" />
+    <Compile Include="Screens\MapEditorCreateScreen.cs" />
+    <Compile Include="Screens\MapEditorLoadScreen.cs" />
+    <Compile Include="Screens\MapEditorMenuScreen.cs" />
     <Compile Include="Screens\MenuEntry.cs" />
     <Compile Include="Screens\MenuScreen.cs" />
     <Compile Include="Screens\MessageBoxScreen.cs" />

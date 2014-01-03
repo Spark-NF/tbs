@@ -60,13 +60,13 @@ namespace TBS.Screens
 
         #endregion
 
-        #region Events
+		#region Events
 
 
-        /// <summary>
-        /// Event raised when the menu entry is selected.
-        /// </summary>
-        public event EventHandler<PlayerIndexEventArgs> Selected;
+		/// <summary>
+		/// Event raised when the menu entry is selected.
+		/// </summary>
+		public event EventHandler<PlayerIndexEventArgs> Selected;
 
 
         /// <summary>
