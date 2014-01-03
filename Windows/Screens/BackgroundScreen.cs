@@ -84,11 +84,11 @@ namespace TBS.Screens
         {
 			var spriteBatch = ScreenManager.SpriteBatch;
 			var viewport = ScreenManager.GraphicsDevice.Viewport;
-            var fullscreen = new Rectangle(0, 0, viewport.Width, viewport.Height);
 
             spriteBatch.Begin();
-            spriteBatch.Draw(_backgroundTexture, fullscreen,
-                             new Color(TransitionAlpha, TransitionAlpha, TransitionAlpha));
+			spriteBatch.Draw(_backgroundTexture,
+				new Rectangle(0, 0, viewport.Width, viewport.Height),
+				new Color(TransitionAlpha, TransitionAlpha, TransitionAlpha));
             spriteBatch.End();
         }
 

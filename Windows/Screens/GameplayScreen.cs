@@ -30,6 +30,7 @@ namespace TBS.Screens
 		private readonly Dictionary<string, Sprite> _texturesUnitsSmall = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsPreview = new Dictionary<string, Sprite>();
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
+		private Texture2D _backgroundTexture;
 		private SpriteFont _font, _fontDebug;
 	    private Sprite _fontLife, _capturing;
 		private Vector2 _cursorPos, _curMovePath;
@@ -67,11 +68,6 @@ namespace TBS.Screens
 			UnitCreator.Initialize();
 
 			_nullCursor = new Vector2(-1, -1);
-			_players = new[]
-			{
-				new Player(1, false),
-				new Player(2, true)
-			};
 			_terrains = new[]
 		    {
 			    new Terrain("Plains", false, 1, 1, 1, 2, 1, 1, 1, -1, -1),
@@ -83,11 +79,11 @@ namespace TBS.Screens
 			    new Terrain("Sea", false, 0, -1, -1, -1, -1, -1, 1, 1, 1),
 			    new Terrain("BridgeSea", false, 0, 1, 1, 1, 1, 1, 1, 1, 1),
 			    new Terrain("BridgeRiver", false, 0, 1, 1, 1, 1, 1, 1, 1, 1),
-			    new Terrain("River", false, 0, 2, 1, -1, -1, -1, 1, -1, -1)/*,
+			    new Terrain("River", false, 0, 2, 1, -1, -1, -1, 1, -1, -1),
 			    new Terrain("Beach", false, 0, 1, 1, 2, 2, 1, 1, -1, 1),
 			    new Terrain("Rough Sea", false, 0, -1, -1, -1, -1, -1, 1, 2, 2),
 			    new Terrain("Mist", true, 0, -1, -1, -1, -1, -1, 1, 1, 1),
-			    new Terrain("Reef", true, 0, -1, -1, -1, -1, -1, 1, 2, 2)*/
+			    new Terrain("Reef", true, 0, -1, -1, -1, -1, -1, 1, 2, 2)
 		    };
 
 			// Load map data from TXT file
@@ -97,29 +93,39 @@ namespace TBS.Screens
 			//_mapName = flines[0].Trim();
 			_mapWidth = Convert.ToInt32(flines[1].Trim());
 			_mapHeight = Convert.ToInt32(flines[2].Trim());
+		    var plyers = flines.GetRange(3, 4).Where(l => !l.StartsWith("0")).ToArray();
+
+		    _players = new Player[plyers.Length];
+		    for (var i = 0; i < _players.Length; ++i)
+			    _players[i] = new Player(i + 1, false, Convert.ToInt32(plyers[i].Trim()));
 			var terrainLines = new string[_mapHeight];
 		    var read = 0;
-			for (var i = 3; i < _mapHeight + 3; ++i)
+			for (var i = 7; i < _mapHeight + 7; ++i)
 		    {
 				var line = flines[i].Trim();
 				terrainLines[read++] = line;
 		    }
 		    var buildings = flines;
-			buildings.RemoveRange(0, _mapHeight + 3);
+			buildings.RemoveRange(0, _mapHeight + 7);
 
 			// Generate terrain according to map data
 			_mapTerrains = new Terrain[_mapHeight, _mapWidth];
 			for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
-					_mapTerrains[y, x] = _terrains[terrainLines[y][x] - '0'];
+				{
+					var type = terrainLines[y][x] >= '0' && terrainLines[y][x] <= '9'
+						? terrainLines[y][x] - '0'
+						: terrainLines[y][x] - 'a' + 10;
+					_mapTerrains[y, x] = _terrains[type];
+				}
 
-			var bOrder = new[] { "Headquarter", "City", "Factory", "Port", "Airport" };
+		    var bOrder = new[] { "Headquarter", "City", "Factory", "Port", "Airport" };
 			_mapBuildings = new Building[_mapHeight, _mapWidth];
 			_units = new List<Unit>();
 			foreach (var data in buildings.Select(b => b.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
 			{
 				var p = Convert.ToInt32(data[2]);
-			    if (data.Length > 4)
+			    if (data.Length == 5)
 			    {
 					var u = UnitCreator.Unit(
 						data[3],
@@ -130,7 +136,7 @@ namespace TBS.Screens
 				    u.Life = Convert.ToInt32(data[4]) * 10;
 					_units.Add(u);
 			    }
-			    else
+				else if (data.Length == 4)
 					_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
 			}
 
@@ -151,6 +157,7 @@ namespace TBS.Screens
             if (_content == null)
 				_content = new ContentManager(ScreenManager.Game.Services, "Content");
 
+			_backgroundTexture = _content.Load<Texture2D>("Menu/Background");
 			_cursor = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Cursor"), 1, 2);
 			_move = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Move"));
 			_attack = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Attack"));
@@ -166,28 +173,37 @@ namespace TBS.Screens
 			_terrains[7].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"), 16);
 			_terrains[8].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"), 16);
 			_terrains[9].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/River"), 16);
+			_terrains[10].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Beach"));
+			_terrains[11].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/RoughSea"));
+			_terrains[12].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Mist"));
+			_terrains[13].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Reef"));
 			_gridWidth = _terrains[0].Texture.Texture.Width;
 			_gridHeight = _terrains[0].Texture.Texture.Width;
 
-			_texturesBuildings.Add("Headquarter", new Sprite(_content.Load<Texture2D>("Buildings/Headquarter"), 5, 4));
-			_texturesBuildings.Add("City", new Sprite(_content.Load<Texture2D>("Buildings/City"), 5, 4));
-			_texturesBuildings.Add("Factory", new Sprite(_content.Load<Texture2D>("Buildings/Factory"), 5, 4));
-			_texturesBuildings.Add("Port", new Sprite(_content.Load<Texture2D>("Buildings/Port"), 5, 4));
-			_texturesBuildings.Add("Airport", new Sprite(_content.Load<Texture2D>("Buildings/Airport"), 5, 4));
+			_texturesBuildings.Add("Headquarter", new Sprite(_content.Load<Texture2D>("Buildings/Headquarter"), 6, 4));
+			_texturesBuildings.Add("City", new Sprite(_content.Load<Texture2D>("Buildings/City"), 6, 4));
+			_texturesBuildings.Add("Factory", new Sprite(_content.Load<Texture2D>("Buildings/Factory"), 6, 4));
+			_texturesBuildings.Add("Port", new Sprite(_content.Load<Texture2D>("Buildings/Port"), 6, 4));
+			_texturesBuildings.Add("Airport", new Sprite(_content.Load<Texture2D>("Buildings/Airport"), 6, 4));
 
 	        var units = new[]
 	        {
 		        new Tuple<string,string>("Anti-Air", "AntiAir"),
-		        new Tuple<string,string>("Infantry", "Inf1"),
-		        new Tuple<string,string>("Mech", "Bazooka1"),
-		        new Tuple<string,string>("Bike", "Moto1"),
+		        new Tuple<string,string>("Anti-Tank", "AntiTank"),
 		        new Tuple<string,string>("Artillery", "Artillery"),
-		        new Tuple<string,string>("Tank", "Tank"),
+		        new Tuple<string,string>("Mech", "Bazooka1"),
+		        new Tuple<string,string>("Bomber", "Bomber"),
+		        new Tuple<string,string>("Fighter", "Fighter"),
+		        new Tuple<string,string>("Battle Copter", "FightHeli"),
+		        new Tuple<string,string>("Flare", "Flare"),
+		        new Tuple<string,string>("Infantry", "Inf1"),
 		        new Tuple<string,string>("Medium Tank", "MediumTank"),
+		        new Tuple<string,string>("Missiles", "Missiles"),
+		        new Tuple<string,string>("Bike", "Moto1"),
 		        new Tuple<string,string>("Recon", "Recon"),
 		        new Tuple<string,string>("Rig", "Rig"),
 		        new Tuple<string,string>("Rockets", "Rockets"),
-		        new Tuple<string,string>("Battle Copter", "FightHeli"),
+		        new Tuple<string,string>("Tank", "Tank"),
 		        new Tuple<string,string>("Transport Copter", "TransHeli")
 	        };
 	        foreach (var u in units)
@@ -440,14 +456,20 @@ namespace TBS.Screens
 						else
 							SetContextMenu("Move", "Move", "Cancel");
 			        }
-			        else if (unitUnder.Player != _selectedUnit.Player)
+			        else if (unitUnder.Player != _selectedUnit.Player && _selectedUnit.CanMoveAndAttack())
 						SetContextMenu("Attack", "Attack", "Cancel");
 			        else if (unitUnder == _selectedUnit)
 			        {
 				        if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
-							SetContextMenu("Capture", "Capture", "Wait", "Cancel");
+					        SetContextMenu("Capture", "Capture", "Wait", "Cancel");
 				        else
-							SetContextMenu("Wait", "Wait", "Cancel");
+				        {
+					        var inRange = false;
+							if (inRange)
+								SetContextMenu("Wait", "Attack", "Wait", "Cancel");
+							else
+								SetContextMenu("Wait", "Wait", "Cancel");
+				        }
 			        }
 			        else if (unitUnder.Type == _selectedUnit.Type)
 						SetContextMenu("Merge", "Merge", "Cancel");
@@ -526,18 +548,20 @@ namespace TBS.Screens
         /// </summary>
         public override void Draw(GameTime gameTime)
         {
-            var graphics = ScreenManager.GraphicsDevice;
-            var spriteBatch = ScreenManager.SpriteBatch;
+			var graphics = ScreenManager.GraphicsDevice;
+			var spriteBatch = ScreenManager.SpriteBatch;
 			
 			graphics.Clear(ClearOptions.Target, Color.CornflowerBlue, 0, 0);
 			spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend);
+
+			spriteBatch.Draw(_backgroundTexture, new Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height), Color.White);
 
 			// Draw terrain and bridges
 			for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
 				{
 					var terrain = _mapTerrains[y, x];
-					var tex = terrain.Type == "BridgeSea"
+					var tex = terrain.Type == "Mist" || terrain.Type == "BridgeSea"
 						? _terrains[6].Texture
 						: (terrain.Type == "BridgeRiver"
 							? _terrains[9].Texture
@@ -557,15 +581,15 @@ namespace TBS.Screens
 								 + (x > 0 && !_mapTerrains[y, x - 1].IsRiver() ? 1 : 0);
 					tex.Draw(
 						spriteBatch,
-						y / 100f,
+						y / 100f + 0.1f,
 						new Vector2(
 							_gridWidth * x - _camera.X,
 							_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
 						number);
-					if (terrain.Type == "BridgeSea" || terrain.Type == "BridgeRiver" || terrain.Type == "Road")
+					if (terrain.Type == "Mist" || terrain.Type == "BridgeSea" || terrain.Type == "BridgeRiver" || terrain.Type == "Road")
 						_mapTerrains[y, x].Texture.Draw(
 							spriteBatch,
-							y / 100f + 0.001f,
+							y / 100f + 0.101f,
 							new Vector2(
 								_gridWidth * x - _camera.X,
 								_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
@@ -625,9 +649,9 @@ namespace TBS.Screens
 							_gridHeight * y - texture.Height + _gridHeight - _camera.Y);
 						texture.Draw(
 							spriteBatch,
-							y / 100f + 0.003f,
+							y / 100f + 0.103f,
 							pos,
-							_mapBuildings[y, x].Player == null ? 0 : _mapBuildings[y, x].Player.Number);
+							_mapBuildings[y, x].Player == null ? 0 : _mapBuildings[y, x].Player.Version);
 						if (_mapBuildings[y, x].CaptureStatus < 20)
 							_capturing.Draw(spriteBatch, 0.91f, pos + new Vector2(0, texture.Height - 8));
 					}
@@ -643,18 +667,18 @@ namespace TBS.Screens
 						texture.Height - _gridHeight);
 			        texture.Draw(
 				        spriteBatch,
-				        u.Position.Y / 100f + 0.006f,
+				        u.Position.Y / 100f + 0.106f,
 						pos,
-				        3 * (u.Player.Number - 1),
+				        3 * (u.Player.Version - 1),
 				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
 				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
 		        }
 		        else
 			        _texturesUnitsPreview[u.Type].Draw(
 				        spriteBatch,
-				        u.Position.Y / 100f + 0.006f,
+				        u.Position.Y / 100f + 0.106f,
 				        _gridWidth * u.Position - _camera,
-				        u.Player.Number - 1,
+						u.Player.Version - 1,
 				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
 				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
 				if (u.Life <= 90)
@@ -665,13 +689,13 @@ namespace TBS.Screens
 						(int)Math.Ceiling((double)u.Life / 10));
 	        }
 
-	        // User Interface
+	        // User Interface (15px per number)
 			spriteBatch.DrawString(_font, "Day " + _turn, new Vector2(13, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
 			spriteBatch.DrawString(_font, "Day " + _turn, new Vector2(12, 8), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
-			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 205, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
-			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 206, 8), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
-			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 205, 39), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
-			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 206, 38), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
+			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 220, 9), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
+			spriteBatch.DrawString(_font, "Player 1: " + _players[0].Money + " €", new Vector2(graphics.Viewport.Width - 221, 8), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
+			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 220, 39), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.90f);
+			spriteBatch.DrawString(_font, "Player 2: " + _players[1].Money + " €", new Vector2(graphics.Viewport.Width - 221, 38), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.91f);
 			
 			// Context menu
 	        if (_showContextMenu)

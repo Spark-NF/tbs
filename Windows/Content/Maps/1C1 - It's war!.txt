@@ -3,6 +3,10 @@
 1C1 - It's war!
 19
 12
+1
+2
+0
+0
 
 
 # Terrain

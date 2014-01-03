@@ -46,9 +46,9 @@
     <Reference Include="mscorlib" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Content\TBS.Content.contentproj">
+    <ProjectReference Include="..\Content\Content.contentproj">
       <Project>{9491FAB1-17D3-4116-8AC7-BDCF5F608086}</Project>
-      <Name>TBS.Content %28Content%29</Name>
+      <Name>Content</Name>
       <XnaReferenceType>Content</XnaReferenceType>
     </ProjectReference>
   </ItemGroup>

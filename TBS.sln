@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TBS.Windows", "Windows\TBS.Windows.csproj", "{8A727371-2B2A-4D6F-87E2-215B1A032E38}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Windows", "Windows\Windows.csproj", "{8A727371-2B2A-4D6F-87E2-215B1A032E38}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TBS.ContentProject", "ContentProject\TBS.ContentProject.csproj", "{4FD793FC-3B0E-4B1D-BC16-219F125970CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentProject", "ContentProject\ContentProject.csproj", "{4FD793FC-3B0E-4B1D-BC16-219F125970CA}"
 EndProject
-Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "TBS.Content", "Content\TBS.Content.contentproj", "{9491FAB1-17D3-4116-8AC7-BDCF5F608086}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Content", "Content\Content.contentproj", "{9491FAB1-17D3-4116-8AC7-BDCF5F608086}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -30,15 +30,23 @@ namespace TBS
 
 		public bool IsSea()
 		{
-			return (Type == "Sea" || Type == "BridgeSea");
+			return (Type == "Sea"
+				|| Type == "BridgeSea"
+				|| Type == "Beach"
+				|| Type == "RoughSea"
+				|| Type == "Reef"
+				|| Type == "Mist");
 		}
 		public bool IsRiver()
 		{
-			return (Type == "River" || Type == "BridgeRiver");
+			return (Type == "River"
+				|| Type == "BridgeRiver");
 		}
 		public bool IsRoad()
 		{
-			return (Type == "Road" || Type == "BridgeSea" || Type == "BridgeRiver");
+			return (Type == "Road"
+				|| Type == "BridgeSea"
+				|| Type == "BridgeRiver");
 		}
 	}
 }

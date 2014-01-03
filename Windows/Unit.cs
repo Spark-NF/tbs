@@ -112,13 +112,18 @@ namespace TBS
 
 		public void Attack(Unit other, Terrain[,] map, bool counter = true)
 		{
-			if (MainWeapon != Weapon.None)
-				Ammo--;
-
 			if (MainWeapon != Weapon.None && Ammo > 0 || SecondaryWeapon != Weapon.None)
 			{
-				var basedamage = UnitCreator.Damage(this, other);
-				if (basedamage >= 0)
+				var dmg = UnitCreator.Damage(this, other);
+				int basedamage;
+				if (MainWeapon != Weapon.None && Ammo > 0 && dmg.Item1 > 0)
+				{
+					Ammo--;
+					basedamage = dmg.Item1;
+				}
+				else
+					basedamage = dmg.Item2;
+				if (basedamage > 0)
 				{
 					other.Life -= (int)(basedamage
 					                    * (Math.Ceiling((double)Life / 10f) / 10f)
