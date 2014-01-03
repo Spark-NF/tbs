@@ -81,8 +81,9 @@ namespace TBS.Screens
 			    new Terrain("Wasteland", false, 2, 1, 1, 3, 3, 2, 1, -1, -1),
 			    new Terrain("Ruins", true, 1, 1, 1, 2, 1, 1, 1, -1, -1),
 			    new Terrain("Sea", false, 0, -1, -1, -1, -1, -1, 1, 1, 1),
-			    new Terrain("Bridge", false, 0, 1, 1, 1, 1, 1, 1, 1, 1)/*,
-			    new Terrain("River", false, 0, 2, 1, -1, -1, -1, 1, -1, -1),
+			    new Terrain("BridgeSea", false, 0, 1, 1, 1, 1, 1, 1, 1, 1),
+			    new Terrain("BridgeRiver", false, 0, 1, 1, 1, 1, 1, 1, 1, 1),
+			    new Terrain("River", false, 0, 2, 1, -1, -1, -1, 1, -1, -1)/*,
 			    new Terrain("Beach", false, 0, 1, 1, 2, 2, 1, 1, -1, 1),
 			    new Terrain("Rough Sea", false, 0, -1, -1, -1, -1, -1, 1, 2, 2),
 			    new Terrain("Mist", true, 0, -1, -1, -1, -1, -1, 1, 1, 1),
@@ -151,6 +152,8 @@ namespace TBS.Screens
 			_terrains[5].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Ruins"));
 			_terrains[6].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Sea"), 16);
 			_terrains[7].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"), 16);
+			_terrains[8].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/Bridge"), 16);
+			_terrains[9].Texture = new Sprite(_content.Load<Texture2D>("Terrains/Medium/River"), 16);
 			_gridWidth = _terrains[0].Texture.Texture.Width;
 			_gridHeight = _terrains[0].Texture.Texture.Width;
 
@@ -519,31 +522,39 @@ namespace TBS.Screens
 				for (var x = 0; x < _mapWidth; ++x)
 				{
 					var terrain = _mapTerrains[y, x];
-					var tex = terrain.Type == "Bridge"
+					var tex = terrain.Type == "BridgeSea"
 						? _terrains[6].Texture
-						: (terrain.Type == "Road"
-							? _terrains[0].Texture
-							: terrain.Texture);
+						: (terrain.Type == "BridgeRiver"
+							? _terrains[9].Texture
+							: (terrain.Type == "Road"
+								? _terrains[0].Texture
+								: terrain.Texture));
+					var number = 0;
+					if (terrain.Type == "Sea" || terrain.Type == "BridgeSea")
+						number = (y > 0 && !_mapTerrains[y - 1, x].IsSea() ? 8 : 0)
+								 + (x < _mapWidth - 1 && !_mapTerrains[y, x + 1].IsSea() ? 4 : 0)
+								 + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsSea() ? 2 : 0)
+								 + (x > 0 && !_mapTerrains[y, x - 1].IsSea() ? 1 : 0);
+					else if (terrain.Type == "River" || terrain.Type == "BridgeRiver")
+						number = (y > 0 && !_mapTerrains[y - 1, x].IsRiver() ? 8 : 0)
+								 + (x < _mapWidth - 1 && !_mapTerrains[y, x + 1].IsRiver() ? 4 : 0)
+								 + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsRiver() ? 2 : 0)
+								 + (x > 0 && !_mapTerrains[y, x - 1].IsRiver() ? 1 : 0);
 					tex.Draw(
 						spriteBatch,
 						y / 100f,
 						new Vector2(
 							_gridWidth * x - _camera.X,
 							_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
-						terrain.Type == "Sea" || terrain.Type == "Bridge"
-							? (y > 0 && !_mapTerrains[y - 1, x].IsSea() ? 8 : 0)
-							  + (x < _mapWidth - 1 && !_mapTerrains[y, x + 1].IsSea() ? 4 : 0)
-							  + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsSea() ? 2 : 0)
-							  + (x > 0 && !_mapTerrains[y, x - 1].IsSea() ? 1 : 0)
-							: 0);
-					if (terrain.Type == "Bridge" || terrain.Type == "Road")
+						number);
+					if (terrain.Type == "BridgeSea" || terrain.Type == "BridgeRiver" || terrain.Type == "Road")
 						_mapTerrains[y, x].Texture.Draw(
 							spriteBatch,
 							y / 100f + 0.001f,
 							new Vector2(
 								_gridWidth * x - _camera.X,
 								_gridHeight * y - _camera.Y + _gridHeight - _mapTerrains[y, x].Texture.Height),
-							terrain.Type == "Road" || terrain.Type == "Bridge"
+							terrain.Type == "Road" || terrain.Type == "BridgeSea" || terrain.Type == "BridgeRiver"
 								? (y > 0 && !_mapTerrains[y - 1, x].IsRoad() ? 8 : 0)
 								  + (x < _mapWidth - 1 && !_mapTerrains[y, x + 1].IsRoad() ? 4 : 0)
 								  + (y < _mapHeight - 1 && !_mapTerrains[y + 1, x].IsRoad() ? 2 : 0)
