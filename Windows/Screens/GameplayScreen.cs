@@ -115,15 +115,27 @@ namespace TBS.Screens
 
 			var bOrder = new[] { "Headquarter", "City", "Factory", "Port", "Airport" };
 			_mapBuildings = new Building[_mapHeight, _mapWidth];
+			_units = new List<Unit>();
 			foreach (var data in buildings.Select(b => b.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
-		    {
-			    var p = Convert.ToInt32(data[2]);
-				_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
-		    }
+			{
+				var p = Convert.ToInt32(data[2]);
+			    if (data.Length > 4)
+			    {
+					var u = UnitCreator.Unit(
+						data[3],
+						_players[p - 1],
+						new Vector2(
+							Convert.ToInt32(data[1]),
+							Convert.ToInt32(data[0])));
+				    u.Life = Convert.ToInt32(data[4]) * 10;
+					_units.Add(u);
+			    }
+			    else
+					_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
+			}
 
 		    _availableMoves = new bool[_mapHeight, _mapWidth];
 			_availableAttacks = new int[_mapHeight, _mapWidth];
-			_units = new List<Unit>();
 			_camera = new Vector2(-50, -80);
 			_turn = 1;
 			_currentPlayer = 1;
@@ -163,24 +175,27 @@ namespace TBS.Screens
 			_texturesBuildings.Add("Port", new Sprite(_content.Load<Texture2D>("Buildings/Port"), 5, 4));
 			_texturesBuildings.Add("Airport", new Sprite(_content.Load<Texture2D>("Buildings/Airport"), 5, 4));
 
-	        _texturesUnitsSmall.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Small/Inf1"), 6, 3, 200));
-	        _texturesUnitsSmall.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Small/Bazooka1"), 6, 3, 200));
-			_texturesUnitsSmall.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Small/Moto1"), 6, 3, 200));
-			_texturesUnitsSmall.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 6, 3, 200));
-			_texturesUnitsSmall.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Small/FightHeli"), 6, 3, 200));
-			_texturesUnitsSmall.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Small/TransHeli"), 6, 3, 200));
-			_texturesUnitsPreview.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Preview/Inf1"), 2, 3, 400));
-			_texturesUnitsPreview.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Preview/Bazooka1"), 2, 3, 400));
-			_texturesUnitsPreview.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Preview/Moto1"), 2, 3, 400));
-			_texturesUnitsPreview.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Preview/Artillery"), 2, 3, 400));
-			_texturesUnitsPreview.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Preview/FightHeli"), 2, 3, 400));
-			_texturesUnitsPreview.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Preview/TransHeli"), 2, 3, 400));
-			_texturesUnitsBig.Add("Infantry", new Sprite(_content.Load<Texture2D>("Units/Big/Inf1"), 6, 3, 200));
-			_texturesUnitsBig.Add("Mech", new Sprite(_content.Load<Texture2D>("Units/Big/Bazooka1"), 6, 3, 200));
-			_texturesUnitsBig.Add("Bike", new Sprite(_content.Load<Texture2D>("Units/Big/Moto1"), 6, 3, 200));
-			_texturesUnitsBig.Add("Artillery", new Sprite(_content.Load<Texture2D>("Units/Big/Artillery"), 6, 3, 200));
-			_texturesUnitsBig.Add("Battle Copter", new Sprite(_content.Load<Texture2D>("Units/Big/FightHeli"), 6, 3, 200));
-			_texturesUnitsBig.Add("Transport Copter", new Sprite(_content.Load<Texture2D>("Units/Big/TransHeli"), 6, 3, 200));
+	        var units = new[]
+	        {
+		        new Tuple<string,string>("Anti-Air", "AntiAir"),
+		        new Tuple<string,string>("Infantry", "Inf1"),
+		        new Tuple<string,string>("Mech", "Bazooka1"),
+		        new Tuple<string,string>("Bike", "Moto1"),
+		        new Tuple<string,string>("Artillery", "Artillery"),
+		        new Tuple<string,string>("Tank", "Tank"),
+		        new Tuple<string,string>("Medium Tank", "MediumTank"),
+		        new Tuple<string,string>("Recon", "Recon"),
+		        new Tuple<string,string>("Rig", "Rig"),
+		        new Tuple<string,string>("Rockets", "Rockets"),
+		        new Tuple<string,string>("Battle Copter", "FightHeli"),
+		        new Tuple<string,string>("Transport Copter", "TransHeli")
+	        };
+	        foreach (var u in units)
+			{
+				//_texturesUnitsSmall.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Small/" + u.Item2), 6, 3, 200));
+				_texturesUnitsPreview.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Preview/" + u.Item2), 2, 3, 400));
+				_texturesUnitsBig.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Big/" + u.Item2), 6, 3, 200));
+	        }
 
 			_font = _content.Load<SpriteFont>("Fonts/Game");
 			_fontDebug = _content.Load<SpriteFont>("Fonts/Debug");

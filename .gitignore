@@ -1,10 +1,11 @@
 ﻿*.cachefile
 *.user
 *.db
-/GameName1/GameName1Content/obj
-/GameName1/GameName1/bin/PSM
-/GameName1/GameName1/obj/PSM
-/TBS/bin/Windows/Debug
-/TBS/obj/x86/Debug
 *.suo
 *.xnb
+/ContentProject/bin
+/ContentProject/obj
+/Content/bin
+/Content/obj
+/Windows/bin
+/Windows/obj

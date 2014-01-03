@@ -56,7 +56,7 @@ namespace TBS
 		public int RangeMin { get; private set; }
 		public int RangeMax { get; private set; }
 		public int Gas { get; private set; }
-		public int Life { get; private set; }
+		public int Life { get; set; }
 		public MoveType MovementType { get; private set; }
 		public UnitType UType { get; private set; }
 		public Weapon MainWeapon { get; private set; }
