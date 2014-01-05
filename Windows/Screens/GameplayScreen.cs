@@ -45,7 +45,7 @@ namespace TBS.Screens
 		private readonly Player[] _players;
 		private readonly Terrain[,] _mapTerrains;
 		private bool[,] _availableMoves;
-		private int[,] _availableAttacks;
+		private int[,] _availableAttacks, _availableAttacksOther;
 		private readonly Building[,] _mapBuildings;
 	    private readonly List<Unit> _units;
 	    private Unit _attacksShowing;
@@ -142,8 +142,9 @@ namespace TBS.Screens
 					_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
 			}
 
-		    _availableMoves = new bool[_mapHeight, _mapWidth];
+			_availableMoves = new bool[_mapHeight, _mapWidth];
 			_availableAttacks = new int[_mapHeight, _mapWidth];
+			_availableAttacksOther = new int[_mapHeight, _mapWidth];
 			_camera = new Vector2(-50, -80);
 			_turn = 1;
 			_currentPlayer = 1;
@@ -378,7 +379,7 @@ namespace TBS.Screens
 			// Right click
 		    if (_attacksShowing != null && !Souris.Get().Pressed(MouseButton.Right))
 			{
-				_availableAttacks = new int[_mapHeight, _mapWidth];
+				_availableAttacksOther = new int[_mapHeight, _mapWidth];
 				_attacksShowing = null;
 		    }
 		    else if (Souris.Get().Clicked(MouseButton.Right))
@@ -393,14 +394,10 @@ namespace TBS.Screens
 					if (unitUnder != null)
 					{
 						_attacksShowing = unitUnder;
-						SetAvailableAttacks(unitUnder);
+						SetAvailableAttacks(unitUnder, true, false);
 					}
 					else
-					{
 						_selectedUnit = null;
-						_movePath = null;
-						_availableMoves = null;
-					}
 				}
 		    }
 
@@ -412,7 +409,6 @@ namespace TBS.Screens
 			    if (_movePath != null && _movePath.Any())
 				{
 					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
-					var pff = new AStar(_mapTerrains, _units, _selectedUnit, false);
 				    var nodes = pf.FindPath(
 						_movePath.Last().Position,
 						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
@@ -427,12 +423,13 @@ namespace TBS.Screens
 							_movePath.Any() ? _movePath.Last().Position : init,
 							new Point((int)_cursorPos.X, (int)_cursorPos.Y),
 							_movePath.Any() ? (int)_movePath.Last().DistanceTraveled : 0);
-						if (nodes.Count > 1 && nodes.Last().Occupied && nodes[nodes.Count - 2].Friendly)
+						if (nodes != null && nodes.Count > 1 && nodes.Last().Occupied && nodes[nodes.Count - 2].Friendly)
 						{
-							var n = pff.FindPath(
+							var n = pf.FindPath(
 								_movePath.Any() ? _movePath.Last().Position : init,
 								new Point((int)_cursorPos.X, (int)_cursorPos.Y),
-								_movePath.Any() ? (int)_movePath.Last().DistanceTraveled : 0);
+								_movePath.Any() ? (int)_movePath.Last().DistanceTraveled : 0,
+								false);
 							if (n != null)
 								nodes = n;
 						}
@@ -467,7 +464,7 @@ namespace TBS.Screens
 					if (nodes != null && nodes.Any() &&
 						(nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
 						|| nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
-						   && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
+						&& _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
 						_movePath = nodes;
 			    }
 			}
@@ -490,7 +487,7 @@ namespace TBS.Screens
 				        for (var x = (int)Math.Max(_selectedUnit.Position.X - _selectedUnit.MovingDistance, 0); x <= (int)Math.Min(_selectedUnit.Position.X + _selectedUnit.MovingDistance, _mapWidth - 1); ++x)
 				        {
 					        var nodes = pf.FindPath(new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y), new Point(x, y));
-					        if (nodes != null && nodes.Any() && nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance)
+					        if (nodes != null && nodes.Any() && nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance && !nodes.Last().Occupied)
 						        _availableMoves[y, x] = true;
 				        }
 		        }
@@ -669,7 +666,7 @@ namespace TBS.Screens
 			// Draw available attacks
 			for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
-					if (_attacksShowing != null && _availableAttacks[y, x] != 0 && (_selectedUnit != _attacksShowing || _selectedUnit != null && _selectedUnit.Moved || !_availableMoves[y, x])
+					if (_attacksShowing != null && _availableAttacksOther[y, x] != 0 && (_selectedUnit != _attacksShowing || _selectedUnit != null && _selectedUnit.Moved || !_availableMoves[y, x])
 						|| _selectedUnit != null && _availableAttacks[y, x] == 2)
 						_attack.Draw(
 							spriteBatch,
@@ -682,10 +679,9 @@ namespace TBS.Screens
 	        if (_movePath != null && _selectedUnit != null)
 			{
 				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
-				var i = 0;
 				foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X] || _availableAttacks[n.Position.Y, n.Position.X] == 2))
 				{
-					spriteBatch.DrawString(_fontPopup, "" + (i++),
+					spriteBatch.DrawString(_fontPopup, "" + n.DistanceTraveled,
 						new Vector2(
 							_gridWidth * n.Position.X - _camera.X,
 							_gridHeight * n.Position.Y - _camera.Y),
@@ -861,9 +857,12 @@ namespace TBS.Screens
 			_showContextMenu = false;
 	    }
 
-	    private void SetAvailableAttacks(Unit unit)
+	    private void SetAvailableAttacks(Unit unit, bool other = false, bool real = true)
 		{
-			_availableAttacks = new int[_mapHeight, _mapWidth];
+			if (other)
+				_availableAttacksOther = new int[_mapHeight, _mapWidth];
+			else
+				_availableAttacks = new int[_mapHeight, _mapWidth];
 			var pf = new AStar(_mapTerrains, _units, unit);
 			for (var y = (int)Math.Max(unit.Position.Y - unit.MovingDistance, 0);
 				y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapHeight - 1);
@@ -872,12 +871,12 @@ namespace TBS.Screens
 					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapWidth - 1);
 					++x)
 				{
-					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y));
+					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y), 0);
 					if ((nodes == null || !nodes.Any()
 						 || !(nodes.Last().DistanceTraveled <= unit.MovingDistance)
 						 || !unit.CanMoveAndAttack()) && (y != (int)unit.Position.Y || x != (int)unit.Position.X))
 						continue;
-					if (nodes != null && nodes.Any() && nodes.Last().Occupied)
+					if (nodes != null && nodes.Any() && (nodes.Last().Occupied || nodes.Last().Friendly && nodes.Last().Unit == 2 && real))
 						continue;
 					var ymin = Math.Max(y - unit.RangeMax, 0);
 					var ymax = Math.Min(y + unit.RangeMax, _mapHeight - 1);
@@ -886,11 +885,18 @@ namespace TBS.Screens
 					for (var iy = ymin; iy <= ymax; ++iy)
 						for (var ix = xmin; ix <= xmax; ++ix)
 							if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unit.RangeMax && Math.Abs(y - iy) + Math.Abs(x - ix) >= unit.RangeMin)
-								_availableAttacks[iy, ix] = _units.Any(t =>
-										t.Player != unit.Player
-										&& Math.Abs(t.Position.X - ix) < 0.1
-										&& Math.Abs(t.Position.Y - iy) < 0.1)
-									? 2 : 1;
+							{
+								var data = _units.Any(t =>
+									t.Player != unit.Player
+									&& Math.Abs(t.Position.X - ix) < 0.1
+									&& Math.Abs(t.Position.Y - iy) < 0.1)
+									? 2
+									: 1;
+								if (other)
+									_availableAttacksOther[iy, ix] = data;
+								else
+									_availableAttacks[iy, ix] = data;
+							}
 				}
 	    }
     }

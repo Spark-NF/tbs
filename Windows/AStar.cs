@@ -17,6 +17,7 @@ namespace TBS
 		public float DistanceTraveled;
 		public bool Occupied;
 		public bool Friendly;
+		public int Unit;
 	}
 
 	class AStar
@@ -27,11 +28,11 @@ namespace TBS
 		private readonly List<Node> _openList = new List<Node>();
 		private readonly List<Node> _closedList = new List<Node>();
 
-		public AStar(Terrain[,] map, List<Unit> units, Unit unit, bool friendly = true)
+		public AStar(Terrain[,] map, List<Unit> units, Unit unit)
 		{
 			_levelWidth = map.GetLength(1);
 			_levelHeight = map.GetLength(0);
-			InitializeSearchNodes(map, units, unit, friendly);
+			InitializeSearchNodes(map, units, unit);
 		}
 
 		private static float Heuristic(Point point1, Point point2)
@@ -40,21 +41,23 @@ namespace TBS
 				   Math.Abs(point1.Y - point2.Y);
 		}
 
-		private void InitializeSearchNodes(Terrain[,] map, List<Unit> units, Unit unit, bool friendly = true)
+		private void InitializeSearchNodes(Terrain[,] map, List<Unit> units, Unit unit)
 		{
 			_searchNodes = new Node[_levelWidth, _levelHeight];
 			for (var y = 0; y < _levelHeight; y++)
 			{
 				for (var x = 0; x < _levelWidth; x++)
 				{
+					var under = units != null ? units.FirstOrDefault(u => (int)u.Position.X == x && (int)u.Position.Y == y) : null;
 					var node = new Node
 					{
 						Position = new Point(x, y),
 						Weight = unit.WeightFromType(map[y, x]),
-						Occupied = units != null && units.Any(u => u.Player != unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y),
-						Friendly = units != null && units.Any(u => u.Player == unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y)
+						Occupied = under != null && under.Player != unit.Player,
+						Friendly = under != null && under.Player == unit.Player && (x != (int)unit.Position.X || y != (int)unit.Position.Y),
+						Unit = under != null ? (under.Moved ? 2 : 1) : 0
 					};
-					if (node.Weight < 0 || node.Friendly && !friendly && (x != (int)unit.Position.X || y != (int)unit.Position.Y))
+					if (node.Weight < 0)
 						continue;
 					node.Neighbors = new Node[4];
 					_searchNodes[x, y] = node;
@@ -65,7 +68,7 @@ namespace TBS
 				for (var x = 0; x < _levelWidth; x++)
 				{
 					var node = _searchNodes[x, y];
-					if (node == null || node.Weight < 0 || node.Occupied)
+					if (node == null || node.Weight < 0)
 						continue;
 					var neighbors = new[]
 					{
@@ -146,7 +149,7 @@ namespace TBS
 			return finalPath;
 		}
 
-		public List<Node> FindPath(Point startPoint, Point endPoint, int initialDistance = 0)
+		public List<Node> FindPath(Point startPoint, Point endPoint, int initialDistance = 0, bool friendly = true)
 		{
 			if (startPoint == endPoint)
 				return null;
@@ -167,29 +170,30 @@ namespace TBS
 					break;
 				if (currentNode == endNode)
 					return FindFinalPath(startNode, endNode);
-				foreach (var neighbor in currentNode.Neighbors)
-				{
-					if (neighbor == null || neighbor.Weight < 0)
-						continue;
-					var distanceTraveled = currentNode.DistanceTraveled + neighbor.Weight;
-					var heuristic = Heuristic(neighbor.Position, endPoint);
-					if (neighbor.InOpenList == false && neighbor.InClosedList == false)
+				if (!currentNode.Occupied && (!currentNode.Friendly || friendly))
+					foreach (var neighbor in currentNode.Neighbors)
 					{
-						neighbor.DistanceTraveled = distanceTraveled;
-						neighbor.DistanceToGoal = distanceTraveled + heuristic;
-						neighbor.Parent = currentNode;
-						neighbor.InOpenList = true;
-						_openList.Add(neighbor);
-					}
-					else if (neighbor.InOpenList || neighbor.InClosedList)
-					{
-						if (!(neighbor.DistanceTraveled > distanceTraveled))
+						if (neighbor == null || neighbor.Weight < 0)
 							continue;
-						neighbor.DistanceTraveled = distanceTraveled;
-						neighbor.DistanceToGoal = distanceTraveled + heuristic;
-						neighbor.Parent = currentNode;
+						var distanceTraveled = currentNode.DistanceTraveled + neighbor.Weight;
+						var heuristic = Heuristic(neighbor.Position, endPoint);
+						if (neighbor.InOpenList == false && neighbor.InClosedList == false)
+						{
+							neighbor.DistanceTraveled = distanceTraveled;
+							neighbor.DistanceToGoal = distanceTraveled + heuristic;
+							neighbor.Parent = currentNode;
+							neighbor.InOpenList = true;
+							_openList.Add(neighbor);
+						}
+						else if (neighbor.InOpenList || neighbor.InClosedList)
+						{
+							if (!(neighbor.DistanceTraveled > distanceTraveled))
+								continue;
+							neighbor.DistanceTraveled = distanceTraveled;
+							neighbor.DistanceToGoal = distanceTraveled + heuristic;
+							neighbor.Parent = currentNode;
+						}
 					}
-				}
 				_openList.Remove(currentNode);
 				currentNode.InClosedList = true;
 			}
