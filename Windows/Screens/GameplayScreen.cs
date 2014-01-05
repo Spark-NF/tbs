@@ -412,48 +412,56 @@ namespace TBS.Screens
 			    if (_movePath != null && _movePath.Any())
 				{
 					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
+					var pff = new AStar(_mapTerrains, _units, _selectedUnit, false);
 				    var nodes = pf.FindPath(
 						_movePath.Last().Position,
 						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
 						(int)_movePath.Last().DistanceTraveled);
-					while (nodes != null && nodes.Any() && _movePath.Count > 0 && nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
+					while (nodes != null && nodes.Any() && _movePath.Any()
+						&& (nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance
+						|| nodes.Count > 1 && nodes.Last().Occupied && nodes[nodes.Count - 2].Friendly
+						|| _movePath.Count > 0 && nodes.Last().Occupied && _movePath.Last().Friendly))
 					{
 						_movePath.RemoveAt(_movePath.Count - 1);
 						nodes = pf.FindPath(
 							_movePath.Any() ? _movePath.Last().Position : init,
 							new Point((int)_cursorPos.X, (int)_cursorPos.Y),
 							_movePath.Any() ? (int)_movePath.Last().DistanceTraveled : 0);
-						if (nodes != null)
-							System.Diagnostics.Debug.WriteLine("While not null " + nodes.Last().DistanceTraveled);
-						else
-							System.Diagnostics.Debug.WriteLine("While NULL");
-					}
-					if (_movePath.Any())
-					{
-						System.Diagnostics.Debug.WriteLine("Any");
-						if (nodes != null)
+						if (nodes.Count > 1 && nodes.Last().Occupied && nodes[nodes.Count - 2].Friendly)
 						{
-							System.Diagnostics.Debug.WriteLine("Any not null " + nodes.Last().DistanceTraveled);
-							var movePathNoNodes = _movePath.Select(u => u.Position).ToList();
-							_movePath.AddRange(nodes);
-							for (var i = 0; i < nodes.Count; ++i)
-							{
-								var index = movePathNoNodes.IndexOf(nodes[i].Position);
-								if (index < 0)
-									continue;
-								_movePath.RemoveRange(index + 1, movePathNoNodes.Count + i - index);
-								movePathNoNodes.RemoveRange(index + 1, movePathNoNodes.Count - index - 1);
-							}
+							var n = pff.FindPath(
+								_movePath.Any() ? _movePath.Last().Position : init,
+								new Point((int)_cursorPos.X, (int)_cursorPos.Y),
+								_movePath.Any() ? (int)_movePath.Last().DistanceTraveled : 0);
+							if (n != null)
+								nodes = n;
 						}
-						else
-							_movePath = null;
+					}
+					if (_movePath.Any() && nodes != null)
+					{
+						var movePathNoNodes = _movePath.Select(u => u.Position).ToList();
+						_movePath.AddRange(nodes);
+
+						// Remove duplicates
+						foreach (var n in nodes)
+						{
+							if (n.Position == new Point((int)_selectedUnit.Position.X, (int)_selectedUnit.Position.Y))
+							{
+								_movePath.Clear();
+								break;
+							}
+							var index = movePathNoNodes.IndexOf(n.Position);
+							if (index < 0)
+								continue;
+							_movePath.RemoveRange(index + 1, _movePath.Count - index - 1);
+							movePathNoNodes.RemoveRange(index + 1, movePathNoNodes.Count - index - 1);
+						}
 					}
 					else
-						_movePath = null;
+						_movePath = nodes;
 				}
 				if (_movePath == null || !_movePath.Any())
 				{
-					System.Diagnostics.Debug.WriteLine("Null");
 					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
 					var nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
 					if (nodes != null && nodes.Any() &&
@@ -674,13 +682,15 @@ namespace TBS.Screens
 	        if (_movePath != null && _selectedUnit != null)
 			{
 				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
-				int i = 0;
+				var i = 0;
 				foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X] || _availableAttacks[n.Position.Y, n.Position.X] == 2))
 				{
 					spriteBatch.DrawString(_fontPopup, "" + (i++),
 						new Vector2(
 							_gridWidth * n.Position.X - _camera.X,
-							_gridHeight * n.Position.Y - _camera.Y), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+							_gridHeight * n.Position.Y - _camera.Y),
+							n.Friendly ? Color.Green : (n.Occupied ? Color.Black : Color.White),
+							0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
 					_attack.Draw(
 						spriteBatch,
 						0.82f,

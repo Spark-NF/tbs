@@ -16,6 +16,7 @@ namespace TBS
 		public float DistanceToGoal;
 		public float DistanceTraveled;
 		public bool Occupied;
+		public bool Friendly;
 	}
 
 	class AStar
@@ -26,11 +27,11 @@ namespace TBS
 		private readonly List<Node> _openList = new List<Node>();
 		private readonly List<Node> _closedList = new List<Node>();
 
-		public AStar(Terrain[,] map, List<Unit> units, Unit unit)
+		public AStar(Terrain[,] map, List<Unit> units, Unit unit, bool friendly = true)
 		{
 			_levelWidth = map.GetLength(1);
 			_levelHeight = map.GetLength(0);
-			InitializeSearchNodes(map, units, unit);
+			InitializeSearchNodes(map, units, unit, friendly);
 		}
 
 		private static float Heuristic(Point point1, Point point2)
@@ -39,7 +40,7 @@ namespace TBS
 				   Math.Abs(point1.Y - point2.Y);
 		}
 
-		private void InitializeSearchNodes(Terrain[,] map, List<Unit> units, Unit unit)
+		private void InitializeSearchNodes(Terrain[,] map, List<Unit> units, Unit unit, bool friendly = true)
 		{
 			_searchNodes = new Node[_levelWidth, _levelHeight];
 			for (var y = 0; y < _levelHeight; y++)
@@ -50,9 +51,10 @@ namespace TBS
 					{
 						Position = new Point(x, y),
 						Weight = unit.WeightFromType(map[y, x]),
-						Occupied = units != null && units.Any(u => u.Player != unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y)
+						Occupied = units != null && units.Any(u => u.Player != unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y),
+						Friendly = units != null && units.Any(u => u.Player == unit.Player && (int)u.Position.X == x && (int)u.Position.Y == y)
 					};
-					if (node.Weight < 0)
+					if (node.Weight < 0 || node.Friendly && !friendly && (x != (int)unit.Position.X || y != (int)unit.Position.Y))
 						continue;
 					node.Neighbors = new Node[4];
 					_searchNodes[x, y] = node;
@@ -92,9 +94,9 @@ namespace TBS
 			_openList.Clear();
 			_closedList.Clear();
 
-			for (var y = 0; y < _levelHeight; y++)
+			for (var y = 0; y < _levelHeight; ++y)
 			{
-				for (var x = 0; x < _levelWidth; x++)
+				for (var x = 0; x < _levelWidth; ++x)
 				{
 					var node = _searchNodes[x, y];
 
@@ -115,13 +117,13 @@ namespace TBS
 			var currentTile = _openList[0];
 			var smallestDistanceToGoal = float.MaxValue;
 
-			foreach (Node t in _openList)
+			foreach (var t in _openList)
 			{
-				if (t.DistanceToGoal < smallestDistanceToGoal)
-				{
-					currentTile = t;
-					smallestDistanceToGoal = currentTile.DistanceToGoal;
-				}
+				if (!(t.DistanceToGoal < smallestDistanceToGoal))
+					continue;
+
+				currentTile = t;
+				smallestDistanceToGoal = currentTile.DistanceToGoal;
 			}
 			return currentTile;
 		}
