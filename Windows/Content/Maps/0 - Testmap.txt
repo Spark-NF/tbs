@@ -33,3 +33,14 @@ Test map
 4,4,2,2
 4,5,2,4
 5,4,2,3
+
+
+# Units
+
+# Ally
+2,3,1,Battle Copter,10
+3,2,1,Battle Copter,10
+
+# Ennemy
+3,4,2,Battle Copter,10
+4,3,2,Battle Copter,10

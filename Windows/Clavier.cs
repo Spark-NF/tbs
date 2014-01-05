@@ -1,5 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.Xna.Framework.Input;
+using TBS.Screens;
 
 namespace TBS
 {
@@ -12,12 +14,19 @@ namespace TBS
 		private Clavier()
 		{ }
 
-		public string Text { get; private set; }
+		public EventHandler<PlayerIndexEventArgs> TextEntered { get; set; }
+
+		public string Text { get; set; }
 		private bool _getText;
 		public bool GetText
 		{
 			get { return _getText; }
-			set { Text = ""; _getText = value; }
+			set
+			{
+				TextEntered = null;
+				Text = "";
+				_getText = value;
+			}
 		}
 		private KeyboardState _oldState, _newState;
 
@@ -37,13 +46,21 @@ namespace TBS
 				{
 					case Keys.Back:
 						if (Text.Length > 0)
-						{ Text = Text.Remove(Text.Length - 1, 1); }
+						{
+							Text = Text.Remove(Text.Length - 1, 1);
+							if (TextEntered != null)
+								TextEntered(this, null);
+						}
 						break;
 
 					default:
 						var c = TranslateChar(key, shift, false, false);
 						if (c != 0)
-						{ Text += c; }
+						{
+							Text += c;
+							if (TextEntered != null)
+								TextEntered(this, null);
+						}
 						break;
 				}
 			}

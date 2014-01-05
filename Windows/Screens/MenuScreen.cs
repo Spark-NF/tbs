@@ -50,6 +50,14 @@ namespace TBS.Screens
         }
 
 
+	    protected void AddMenuEntry(MenuEntry e)
+	    {
+		    MenuEntries.Add(e);
+			if (MenuEntries.Count == 1)
+				OnFocusEntry(0, 0);
+	    }
+
+
         #endregion
 
         #region Handle Input
@@ -60,23 +68,31 @@ namespace TBS.Screens
         /// or cancelling the menu.
         /// </summary>
         public override void HandleInput(InputState input)
-        {
+		{
+			PlayerIndex playerIndex;
+
             // Move to the previous menu entry?
             if (input.IsMenuUp(ControllingPlayer))
-            {
+			{
+				OnUnfocusEntry(_selectedEntry, 0);
                 _selectedEntry--;
 
                 if (_selectedEntry < 0)
                     _selectedEntry = _menuEntries.Count - 1;
+
+				OnFocusEntry(_selectedEntry, 0);
             }
 
             // Move to the next menu entry?
             if (input.IsMenuDown(ControllingPlayer))
-            {
+			{
+				OnUnfocusEntry(_selectedEntry, 0);
                 _selectedEntry++;
 
                 if (_selectedEntry >= _menuEntries.Count)
                     _selectedEntry = 0;
+
+				OnFocusEntry(_selectedEntry, 0);
             }
 
             // Accept or cancel the menu? We pass in our ControllingPlayer, which may
@@ -84,8 +100,6 @@ namespace TBS.Screens
             // If we pass a null controlling player, the InputState helper returns to
             // us which player actually provided the input. We pass that through to
             // OnSelectEntry and OnCancel, so they can tell which player triggered them.
-            PlayerIndex playerIndex;
-
             if (input.IsMenuSelect(ControllingPlayer, out playerIndex))
             {
                 OnSelectEntry(_selectedEntry, playerIndex);
@@ -99,11 +113,19 @@ namespace TBS.Screens
 
         /// <summary>
         /// Handler for when the user has chosen a menu entry.
-        /// </summary>
-        protected virtual void OnSelectEntry(int entryIndex, PlayerIndex playerIndex)
-        {
-            _menuEntries[entryIndex].OnSelectEntry(playerIndex);
-        }
+		/// </summary>
+		protected virtual void OnSelectEntry(int entryIndex, PlayerIndex playerIndex)
+		{
+			_menuEntries[entryIndex].OnSelectEntry(playerIndex);
+		}
+		protected virtual void OnFocusEntry(int entryIndex, PlayerIndex playerIndex)
+		{
+			_menuEntries[entryIndex].OnFocusEntry(playerIndex);
+		}
+		protected virtual void OnUnfocusEntry(int entryIndex, PlayerIndex playerIndex)
+		{
+			_menuEntries[entryIndex].OnUnfocusEntry(playerIndex);
+		}
 
 
         /// <summary>

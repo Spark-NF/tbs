@@ -8,8 +8,8 @@ namespace TBS.Screens
 		private string _mapName = "";
 		private int _mapWidth = 5, _mapHeight = 5;
 
-		private MenuEntry _mapNameMenuEntry;
-		private MenuEntry _mapWidthMenuEntry, _mapHeightMenuEntry;
+		private readonly MenuEntry _mapNameMenuEntry;
+		private readonly MenuEntry _mapWidthMenuEntry, _mapHeightMenuEntry;
 
 		public MapEditorCreateScreen()
 			: base("Create map")
@@ -24,49 +24,73 @@ namespace TBS.Screens
 			var back = new MenuEntry("Back");
 
 			// Hook up menu event handlers.
+			_mapNameMenuEntry.Focus += MapNameMenuEntryFocus;
+			_mapNameMenuEntry.Unfocus += MapNameMenuEntryUnfocus;
 			_mapWidthMenuEntry.Selected += MapWidthMenuEntrySelected;
 			_mapHeightMenuEntry.Selected += MapHeightMenuEntrySelected;
 			create.Selected += CreateMenuEntrySelected;
 			back.Selected += OnCancel;
 
 			// Add entries to the menu.
-			MenuEntries.Add(_mapNameMenuEntry);
-			MenuEntries.Add(_mapWidthMenuEntry);
-			MenuEntries.Add(_mapHeightMenuEntry);
-			MenuEntries.Add(create);
-			MenuEntries.Add(back);
+			AddMenuEntry(_mapNameMenuEntry);
+			AddMenuEntry(_mapWidthMenuEntry);
+			AddMenuEntry(_mapHeightMenuEntry);
+			AddMenuEntry(create);
+			AddMenuEntry(back);
 		}
 
 		void MapWidthMenuEntrySelected(object sender, PlayerIndexEventArgs e)
 		{
+			Clavier.Get().GetText = false;
 			_mapWidth = (_mapWidth - 5 + 1) % 26 + 5;
-			_mapWidthMenuEntry.Text = "Width: " + _mapWidth;
+			SetMenuEntryText();
 		}
 		void MapHeightMenuEntrySelected(object sender, PlayerIndexEventArgs e)
 		{
+			Clavier.Get().GetText = false;
 			_mapHeight = (_mapHeight - 5 + 1) % 16 + 5;
+			SetMenuEntryText();
+		}
+		void MapNameMenuEntryFocus(object sender, PlayerIndexEventArgs e)
+		{
+			Clavier.Get().GetText = true;
+			Clavier.Get().Text = _mapName;
+			Clavier.Get().TextEntered = SetMenuEntryText;
+			System.Diagnostics.Debug.WriteLine("Name selected");
+			SetMenuEntryText();
+		}
+		void MapNameMenuEntryUnfocus(object sender, PlayerIndexEventArgs e)
+		{
+			Clavier.Get().GetText = false;
+		}
+
+		void SetMenuEntryText(object sender = null, PlayerIndexEventArgs e = null)
+		{
+			_mapName = Clavier.Get().Text;
+			_mapNameMenuEntry.Text = "Name: " + _mapName;
+			_mapWidthMenuEntry.Text = "Width: " + _mapWidth;
 			_mapHeightMenuEntry.Text = "Height: " + _mapHeight;
 		}
 
 		void CreateMenuEntrySelected(object sender, PlayerIndexEventArgs e)
 		{
-			if (_mapName.Length > 0)
-			{
-				var txt = "# General information\n\n" +
-				          _mapName + "\n" +
-				          _mapWidth + "\n" +
-				          _mapHeight + "\n" +
-				          "1\n" +
-				          "2\n" +
-				          "0\n" +
-				          "0\n\n\n" +
-				          "# Terrain\n";
-				var line = "\n" + new String('0', _mapWidth);
-				for (var i = 0; i < _mapHeight; ++i)
-					txt += line;
-				File.WriteAllText("Content/Maps/" + _mapName + ".txt", txt);
-				LoadingScreen.Load(ScreenManager, true, e.PlayerIndex, new MapEditorScreen(_mapName));
-			}
+			if (_mapName.Length <= 0)
+				return;
+
+			var txt = "# General information\n\n" +
+			          _mapName + "\n" +
+			          _mapWidth + "\n" +
+			          _mapHeight + "\n" +
+			          "1\n" +
+			          "2\n" +
+			          "0\n" +
+			          "0\n\n\n" +
+			          "# Terrain\n";
+			var line = "\n" + new String('0', _mapWidth);
+			for (var i = 0; i < _mapHeight; ++i)
+				txt += line;
+			File.WriteAllText("Content/Maps/" + _mapName + ".txt", txt);
+			LoadingScreen.Load(ScreenManager, true, e.PlayerIndex, new MapEditorScreen(_mapName));
 		}
 	}
 }

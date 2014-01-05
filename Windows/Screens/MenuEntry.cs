@@ -67,16 +67,28 @@ namespace TBS.Screens
 		/// Event raised when the menu entry is selected.
 		/// </summary>
 		public event EventHandler<PlayerIndexEventArgs> Selected;
+		public event EventHandler<PlayerIndexEventArgs> Focus;
+		public event EventHandler<PlayerIndexEventArgs> Unfocus;
 
 
         /// <summary>
         /// Method for raising the Selected event.
-        /// </summary>
-        protected internal virtual void OnSelectEntry(PlayerIndex playerIndex)
-        {
-            if (Selected != null)
-                Selected(this, new PlayerIndexEventArgs(playerIndex));
-        }
+		/// </summary>
+		protected internal virtual void OnSelectEntry(PlayerIndex playerIndex)
+		{
+			if (Selected != null)
+				Selected(this, new PlayerIndexEventArgs(playerIndex));
+		}
+		protected internal virtual void OnFocusEntry(PlayerIndex playerIndex)
+		{
+			if (Focus != null)
+				Focus(this, new PlayerIndexEventArgs(playerIndex));
+		}
+		protected internal virtual void OnUnfocusEntry(PlayerIndex playerIndex)
+		{
+			if (Unfocus != null)
+				Unfocus(this, new PlayerIndexEventArgs(playerIndex));
+		}
 
 
         #endregion

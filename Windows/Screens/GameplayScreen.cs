@@ -193,20 +193,29 @@ namespace TBS.Screens
 		        new Tuple<string,string>("Anti-Air", "AntiAir"),
 		        new Tuple<string,string>("Anti-Tank", "AntiTank"),
 		        new Tuple<string,string>("Artillery", "Artillery"),
+		        new Tuple<string,string>("Battleship", "Battleship"),
 		        new Tuple<string,string>("Mech", "Bazooka1"),
 		        new Tuple<string,string>("Bomber", "Bomber"),
+		        new Tuple<string,string>("Carrier", "Carrier"),
+		        new Tuple<string,string>("Cruiser", "Cruiser"),
+		        new Tuple<string,string>("Duster", "Duster"),
 		        new Tuple<string,string>("Fighter", "Fighter"),
 		        new Tuple<string,string>("Battle Copter", "FightHeli"),
 		        new Tuple<string,string>("Flare", "Flare"),
+		        new Tuple<string,string>("Gunboat", "Gunboat"),
 		        new Tuple<string,string>("Infantry", "Inf1"),
+		        new Tuple<string,string>("Lander", "Lander"),
 		        new Tuple<string,string>("Medium Tank", "MediumTank"),
 		        new Tuple<string,string>("Missiles", "Missiles"),
 		        new Tuple<string,string>("Bike", "Moto1"),
 		        new Tuple<string,string>("Recon", "Recon"),
 		        new Tuple<string,string>("Rig", "Rig"),
 		        new Tuple<string,string>("Rockets", "Rockets"),
+		        new Tuple<string,string>("Seaplane", "Seaplane"),
+		        new Tuple<string,string>("Submarine", "Submarine"),
 		        new Tuple<string,string>("Tank", "Tank"),
-		        new Tuple<string,string>("Transport Copter", "TransHeli")
+		        new Tuple<string,string>("Transport Copter", "TransHeli"),
+		        new Tuple<string,string>("War Tank", "WarTank")
 	        };
 	        foreach (var u in units)
 			{
@@ -407,22 +416,44 @@ namespace TBS.Screens
 						_movePath.Last().Position,
 						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
 						(int)_movePath.Last().DistanceTraveled);
-					if (nodes != null && nodes.Any())
+					var first = true;
+					while (nodes != null && nodes.Any() && _movePath.Count > 1 && nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
 					{
-						if (nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
+						if (first)
 						{
-							nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
-							if (nodes != null && nodes.Any() &&
-							    (nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
-							     || nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
-							     && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
-								_movePath = nodes;
+							pf = new AStar(_mapTerrains, null, _selectedUnit);
+							first = false;
 						}
-						else
+						_movePath.RemoveAt(_movePath.Count - 1);
+						nodes = pf.FindPath(
+							_movePath.Last().Position,
+							new Point((int)_cursorPos.X, (int)_cursorPos.Y),
+							(int)_movePath.Last().DistanceTraveled);
+						if (nodes != null && nodes.Any() &&
+						    (nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
+						     || nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
+						     && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
+							break;
+					}
+					if (_movePath.Any())
+					{
+						if (nodes != null)
+						{
+							List<Point> movePathNoNodes = _movePath.Select(u => u.Position).ToList();
 							_movePath.AddRange(nodes);
+							for (var i = 0; i < nodes.Count; ++i)
+							{
+								var index = movePathNoNodes.IndexOf(nodes[i].Position);
+								if (index >= 0)
+								{
+									_movePath.RemoveRange(index + 1, movePathNoNodes.Count + i - index);
+									movePathNoNodes.RemoveRange(index + 1, movePathNoNodes.Count - index - 1);
+								}
+							}
+						}
 					}
 					else
-						_movePath = nodes;
+						_movePath = null;
 				}
 				if (_movePath == null || !_movePath.Any())
 				{
@@ -646,14 +677,21 @@ namespace TBS.Screens
 	        if (_movePath != null && _selectedUnit != null)
 			{
 				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
+				int i = 0;
 				foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X] || _availableAttacks[n.Position.Y, n.Position.X] == 2))
-			        _attack.Draw(
-				        spriteBatch,
-				        0.82f,
-				        new Vector2(
+				{
+					spriteBatch.DrawString(_fontPopup, "" + (i++),
+						new Vector2(
+							_gridWidth * n.Position.X - _camera.X,
+							_gridHeight * n.Position.Y - _camera.Y), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+					_attack.Draw(
+						spriteBatch,
+						0.82f,
+						new Vector2(
 							_gridWidth * n.Position.X - _camera.X,
 							_gridHeight * n.Position.Y - _camera.Y));
-	        }
+				}
+			}
 
 			// Draw buildings
 			for (var y = 0; y < _mapHeight; ++y)
