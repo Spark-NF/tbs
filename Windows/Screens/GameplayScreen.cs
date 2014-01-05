@@ -416,47 +416,44 @@ namespace TBS.Screens
 						_movePath.Last().Position,
 						new Point((int)_cursorPos.X, (int)_cursorPos.Y),
 						(int)_movePath.Last().DistanceTraveled);
-					var first = true;
-					while (nodes != null && nodes.Any() && _movePath.Count > 1 && nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
+					while (nodes != null && nodes.Any() && _movePath.Count > 0 && nodes.Last().DistanceTraveled > _selectedUnit.MovingDistance)
 					{
-						if (first)
-						{
-							pf = new AStar(_mapTerrains, null, _selectedUnit);
-							first = false;
-						}
 						_movePath.RemoveAt(_movePath.Count - 1);
 						nodes = pf.FindPath(
-							_movePath.Last().Position,
+							_movePath.Any() ? _movePath.Last().Position : init,
 							new Point((int)_cursorPos.X, (int)_cursorPos.Y),
-							(int)_movePath.Last().DistanceTraveled);
-						if (nodes != null && nodes.Any() &&
-						    (nodes.Last().DistanceTraveled <= _selectedUnit.MovingDistance
-						     || nodes.Count > 1 && nodes[nodes.Count - 2].DistanceTraveled <= _selectedUnit.MovingDistance
-						     && _availableAttacks[nodes.Last().Position.Y, nodes.Last().Position.X] == 2))
-							break;
+							_movePath.Any() ? (int)_movePath.Last().DistanceTraveled : 0);
+						if (nodes != null)
+							System.Diagnostics.Debug.WriteLine("While not null " + nodes.Last().DistanceTraveled);
+						else
+							System.Diagnostics.Debug.WriteLine("While NULL");
 					}
 					if (_movePath.Any())
 					{
+						System.Diagnostics.Debug.WriteLine("Any");
 						if (nodes != null)
 						{
-							List<Point> movePathNoNodes = _movePath.Select(u => u.Position).ToList();
+							System.Diagnostics.Debug.WriteLine("Any not null " + nodes.Last().DistanceTraveled);
+							var movePathNoNodes = _movePath.Select(u => u.Position).ToList();
 							_movePath.AddRange(nodes);
 							for (var i = 0; i < nodes.Count; ++i)
 							{
 								var index = movePathNoNodes.IndexOf(nodes[i].Position);
-								if (index >= 0)
-								{
-									_movePath.RemoveRange(index + 1, movePathNoNodes.Count + i - index);
-									movePathNoNodes.RemoveRange(index + 1, movePathNoNodes.Count - index - 1);
-								}
+								if (index < 0)
+									continue;
+								_movePath.RemoveRange(index + 1, movePathNoNodes.Count + i - index);
+								movePathNoNodes.RemoveRange(index + 1, movePathNoNodes.Count - index - 1);
 							}
 						}
+						else
+							_movePath = null;
 					}
 					else
 						_movePath = null;
 				}
 				if (_movePath == null || !_movePath.Any())
 				{
+					System.Diagnostics.Debug.WriteLine("Null");
 					var pf = new AStar(_mapTerrains, _units, _selectedUnit);
 					var nodes = pf.FindPath(init, new Point((int)_cursorPos.X, (int)_cursorPos.Y));
 					if (nodes != null && nodes.Any() &&
