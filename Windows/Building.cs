@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace TBS
 {
@@ -7,6 +8,7 @@ namespace TBS
 		public string Type { get; set; }
 		private int _previousCaptureStatus;
 		public int CaptureStatus { get; private set; }
+		public Vector2 Position { get; private set; }
 		private Player _player;
 		public Player Player
 		{
@@ -21,12 +23,17 @@ namespace TBS
 			}
 		}
 
-		public Building(string type, Player player)
+		public Building(string type, Player player, Vector2 position)
 		{
 			Type = type;
 			_player = player;
+			Position = position;
 			if (_player != null)
+			{
 				_player.Buildings.Add(this);
+				if (Type == "Headquarter")
+					_player.Headquarter = this;
+			}
 			_previousCaptureStatus = 20;
 			CaptureStatus = 20;
 		}

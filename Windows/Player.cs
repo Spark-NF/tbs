@@ -9,6 +9,7 @@ namespace TBS
 		public bool IsAI { get; protected set; }
 		public int Version { get; protected set; }
 		public int Money { get; set; }
+		public Building Headquarter { get; set; }
 		public List<Building> Buildings { get; protected set; }
 		public List<Unit> Units { get; protected set; }
 

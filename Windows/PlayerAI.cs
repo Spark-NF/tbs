@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 
@@ -126,12 +127,67 @@ namespace TBS
 					}
 				}
 
-				// Move one case to the left if possible
-				var destination = u.Position + new Vector2(-1, 0);
-				if (u.CanMove(destination, terrain, allUnits))
+				// Move closer to ennemy base if possible
+				Building ennemyBase = null;
+				Point? ennemyBasePos = null;
+				for (var y = 0; y < allBuildings.GetLength(0); ++y)
+					for (var x = 0; x < allBuildings.GetLength(1); ++x)
+						if (allBuildings[y, x] != null
+							&& allBuildings[y, x].Player != this
+							&& allBuildings[y, x].Type == "Headquarter")
+						{
+							ennemyBasePos = new Point(x, y);
+							ennemyBase = allBuildings[y, x];
+							break;
+						}
+
+				// If the ennemy hasn't been beaten yet
+				if (ennemyBase != null)
 				{
-					u.Move(destination);
-					continue;
+					var dist = Math.Abs(u.Position.X - ennemyBasePos.Value.X) + Math.Abs(u.Position.Y - ennemyBasePos.Value.Y);
+
+					// Move closer but not on the base itself
+					if (ennemyBase != null && dist > 1)
+					{
+						var pf = new AStar(terrain, allUnits, u);
+						var nodes = pf.FindPath(
+							new Point((int)u.Position.X, (int)u.Position.Y),
+							ennemyBasePos.Value,
+							0, true, true);
+						while (nodes != null && nodes.Any()
+							   && (nodes.Last().DistanceTraveled > u.MovingDistance
+								   || !u.CanMove(new Vector2(nodes.Last().Position.X, nodes.Last().Position.Y), terrain, allUnits)
+								   || Math.Abs(nodes.Last().Position.X - ennemyBasePos.Value.X)
+								   + Math.Abs(nodes.Last().Position.Y - ennemyBasePos.Value.Y) < 0.1))
+						{
+							nodes.RemoveAt(nodes.Count - 1);
+						}
+						if (nodes != null && nodes.Any())
+						{
+							u.Move(new Vector2(nodes.Last().Position.X, nodes.Last().Position.Y));
+							continue;
+						}
+					}
+					else if (ennemyBase != null && dist < 0.1)
+					{
+						var pf = new AStar(terrain, allUnits, u);
+						var nodes = pf.FindIntermediatePath(
+							new Point((int)u.Position.X, (int)u.Position.Y),
+							new Point((int)Headquarter.Position.X, (int)Headquarter.Position.Y),
+							u.MovingDistance);
+						while (nodes != null && nodes.Any()
+							&& nodes.First().DistanceTraveled <= u.MovingDistance
+							&& !u.CanMove(new Vector2(nodes.First().Position.X, nodes.First().Position.Y), terrain, allUnits))
+						{
+							nodes.RemoveAt(0);
+						}
+						if (nodes != null && nodes.Any() && nodes.First().DistanceTraveled <= u.MovingDistance
+							&& u.CanMove(new Vector2(nodes.First().Position.X, nodes.First().Position.Y), terrain, allUnits))
+						{
+							u.Move(new Vector2(nodes.First().Position.X, nodes.First().Position.Y));
+							continue;
+						}
+					}
 				}
 
 				// In other cases do nothing

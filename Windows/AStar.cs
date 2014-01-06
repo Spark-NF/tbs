@@ -149,7 +149,7 @@ namespace TBS
 			return finalPath;
 		}
 
-		public List<Node> FindPath(Point startPoint, Point endPoint, int initialDistance = 0, bool friendly = true)
+		public List<Node> FindPath(Point startPoint, Point endPoint, int initialDistance = 0, bool friendly = true, bool ennemy = false)
 		{
 			if (startPoint == endPoint)
 				return null;
@@ -170,6 +170,57 @@ namespace TBS
 					break;
 				if (currentNode == endNode)
 					return FindFinalPath(startNode, endNode);
+				if ((!currentNode.Occupied || ennemy) && (!currentNode.Friendly || friendly))
+					foreach (var neighbor in currentNode.Neighbors)
+					{
+						if (neighbor == null || neighbor.Weight < 0)
+							continue;
+						var distanceTraveled = currentNode.DistanceTraveled + neighbor.Weight;
+						var heuristic = Heuristic(neighbor.Position, endPoint);
+						if (neighbor.InOpenList == false && neighbor.InClosedList == false)
+						{
+							neighbor.DistanceTraveled = distanceTraveled;
+							neighbor.DistanceToGoal = distanceTraveled + heuristic;
+							neighbor.Parent = currentNode;
+							neighbor.InOpenList = true;
+							_openList.Add(neighbor);
+						}
+						else if (neighbor.InOpenList || neighbor.InClosedList)
+						{
+							if (!(neighbor.DistanceTraveled > distanceTraveled))
+								continue;
+							neighbor.DistanceTraveled = distanceTraveled;
+							neighbor.DistanceToGoal = distanceTraveled + heuristic;
+							neighbor.Parent = currentNode;
+						}
+					}
+				_openList.Remove(currentNode);
+				currentNode.InClosedList = true;
+			}
+			return null;
+		}
+
+		public List<Node> FindIntermediatePath(Point startPoint, Point endPoint, int maxDistance, int initialDistance = 0, bool friendly = true)
+		{
+			if (startPoint == endPoint)
+				return null;
+			ResetSearchNodes();
+
+			var startNode = _searchNodes[startPoint.X, startPoint.Y];
+			var endNode = _searchNodes[endPoint.X, endPoint.Y];
+
+			startNode.InOpenList = true;
+			startNode.DistanceToGoal = Heuristic(startPoint, endPoint);
+			startNode.DistanceTraveled = initialDistance;
+			_openList.Add(startNode);
+
+			while (_openList.Count > 0)
+			{
+				var currentNode = FindBestNode();
+				if (currentNode == null)
+					break;
+				if (currentNode == endNode || currentNode.DistanceTraveled >= maxDistance)
+					return FindFinalPath(startNode, currentNode);
 				if (!currentNode.Occupied && (!currentNode.Friendly || friendly))
 					foreach (var neighbor in currentNode.Neighbors)
 					{

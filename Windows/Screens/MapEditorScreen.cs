@@ -122,7 +122,11 @@ namespace TBS.Screens
 					_units.Add(u);
 			    }
 				else if (data.Length == 4)
-					_mapBuildings[Convert.ToInt32(data[0]), Convert.ToInt32(data[1])] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1]);
+				{
+					var x = Convert.ToInt32(data[1]);
+					var y = Convert.ToInt32(data[0]);
+					_mapBuildings[y, x] = new Building(bOrder[Convert.ToInt32(data[3])], p == 0 ? null : _players[p - 1], new Vector2(x, y));
+				}
 			}
 
 			_camera = new Vector2(-50, -80);
