@@ -112,6 +112,9 @@ namespace TBS
 
 		public void Attack(Unit other, Terrain[,] map, bool counter = true)
 		{
+			if (!InRange(other))
+				return;
+
 			if (MainWeapon != Weapon.None && Ammo > 0 || SecondaryWeapon != Weapon.None)
 			{
 				var dmg = UnitCreator.Damage(this, other);
@@ -154,6 +157,13 @@ namespace TBS
 		public void Heal(int number = 20)
 		{
 			Life = Math.Min(100, Life + number);
+		}
+
+		public bool InRange(Unit other)
+		{
+			var diff = (int)Math.Abs(Position.Y - other.Position.Y)
+					   + (int)Math.Abs(Position.X - other.Position.X);
+			return diff >= RangeMin && diff <= RangeMax;
 		}
 	}
 }

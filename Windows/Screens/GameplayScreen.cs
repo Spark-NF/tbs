@@ -22,8 +22,9 @@ namespace TBS.Screens
 
 		private const int CameraSpeed = 5;
 		private readonly Vector2 _nullCursor;
+	    private bool _isAnimating = false;
 
-		private Sprite _cursor, _move, _attack;
+	    private Sprite _cursor, _move, _attack;
 	    private int _gridWidth, _gridHeight;
 		private readonly Terrain[] _terrains;
 		private readonly Dictionary<string, Sprite> _texturesBuildings = new Dictionary<string, Sprite>();
@@ -289,6 +290,9 @@ namespace TBS.Screens
 				_texturesUnitsSmall.Values.ElementAt(i).Update(gameTime);
 			_cursor.Update(gameTime);
 
+			if (_isAnimating)
+			    return;
+
 		    // Context menu
 		    var oldShow = _showContextMenu;
 		    var noSelect = false;
@@ -324,15 +328,15 @@ namespace TBS.Screens
 					}
 					else if (selected == "Attack")
 					{
-						if (_movePath != null && _movePath.Count > 1)
+						var unitUnder = _units.FirstOrDefault(t =>
+							Math.Abs(t.Position.X - _cursorPos.X) < 0.1
+							&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
+						if (_movePath != null && _movePath.Count > 1 && _contextMenuContext == "Direct")
 						{
 							_selectedUnit.Move(new Vector2(_movePath[_movePath.Count - 2].Position.X, _movePath[_movePath.Count - 2].Position.Y));
 							_availableMoves = new bool[_mapHeight, _mapWidth];
 						}
 						_selectedUnit.Moved = true;
-						var unitUnder = _units.FirstOrDefault(t =>
-							Math.Abs(t.Position.X - _cursorPos.X) < 0.1
-							&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
 						if (unitUnder != null)
 						{
 							_selectedUnit.Attack(unitUnder, _mapTerrains);
@@ -477,7 +481,7 @@ namespace TBS.Screens
 					&& Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
 				var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
 		        if (Souris.Get().Clicked(MouseButton.Left) && (_selectedUnit == null || _selectedUnit.Moved) && unitUnder != null && !unitUnder.Moved && unitUnder.Player.Number == _currentPlayer)
-		        {
+				{
 			        _selectedUnit = unitUnder;
 					SetAvailableAttacks(unitUnder);
 					_availableMoves = new bool[_mapHeight, _mapWidth];
@@ -501,9 +505,11 @@ namespace TBS.Screens
 							SetContextMenu("Capture", "Capture", "Move", "Cancel");
 						else
 							SetContextMenu("Move", "Move", "Cancel");
-			        }
-			        else if (unitUnder.Player != _selectedUnit.Player && _selectedUnit.CanMoveAndAttack())
-						SetContextMenu("Attack", "Attack", "Cancel");
+					}
+					else if (unitUnder.Player != _selectedUnit.Player && _selectedUnit.CanMoveAndAttack())
+						SetContextMenu("Direct", "Attack", "Cancel");
+					else if (unitUnder.Player != _selectedUnit.Player && _availableAttacks[(int)_cursorPos.Y, (int)_cursorPos.X] == 2)
+						SetContextMenu("Distance", "Attack", "Cancel");
 			        else if (unitUnder == _selectedUnit)
 			        {
 				        if (buildingUnder != null && buildingUnder.Player != _selectedUnit.Player && _selectedUnit.CanCapture)
@@ -511,7 +517,14 @@ namespace TBS.Screens
 				        else
 				        {
 					        var inRange = false;
-							if (inRange)
+							for (var y = 0; y < _mapHeight; ++y)
+								for (var x = 0; x < _mapHeight; ++x)
+									if (_availableAttacks[y, x] == 2)
+									{
+										inRange = true;
+										break;
+									}
+					        if (inRange)
 								SetContextMenu("Wait", "Attack", "Wait", "Cancel");
 							else
 								SetContextMenu("Wait", "Wait", "Cancel");
@@ -676,9 +689,7 @@ namespace TBS.Screens
 								_gridHeight * y - _camera.Y));
 
 			// Draw current moving path
-	        if (_movePath != null && _selectedUnit != null)
-			{
-				//_attack.Draw(spriteBatch, 0.82f, _gridWidth * _selectedUnit.Position - _camera);
+			if (_movePath != null && _selectedUnit != null && _movePath != null && (_movePath.Any() && !_movePath.Last().Occupied || _selectedUnit.CanMoveAndAttack()))
 				foreach (var n in _movePath.Where(n => _availableMoves[n.Position.Y, n.Position.X] || _availableAttacks[n.Position.Y, n.Position.X] == 2))
 				{
 					spriteBatch.DrawString(_fontPopup, "" + n.DistanceTraveled,
@@ -694,7 +705,6 @@ namespace TBS.Screens
 							_gridWidth * n.Position.X - _camera.X,
 							_gridHeight * n.Position.Y - _camera.Y));
 				}
-			}
 
 			// Draw buildings
 			for (var y = 0; y < _mapHeight; ++y)
@@ -871,7 +881,7 @@ namespace TBS.Screens
 					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapWidth - 1);
 					++x)
 				{
-					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y), 0);
+					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y));
 					if ((nodes == null || !nodes.Any()
 						 || !(nodes.Last().DistanceTraveled <= unit.MovingDistance)
 						 || !unit.CanMoveAndAttack()) && (y != (int)unit.Position.Y || x != (int)unit.Position.X))
