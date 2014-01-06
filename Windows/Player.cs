@@ -5,17 +5,17 @@ namespace TBS
 {
 	class Player
 	{
-		public int Number { get; private set; }
-		public bool IsAI { get; private set; }
-		public int Version { get; private set; }
+		public int Number { get; protected set; }
+		public bool IsAI { get; protected set; }
+		public int Version { get; protected set; }
 		public int Money { get; set; }
-		public List<Building> Buildings { get; private set; }
-		public List<Unit> Units { get; private set; }
+		public List<Building> Buildings { get; protected set; }
+		public List<Unit> Units { get; protected set; }
 
-		public Player(int number, bool isAI, int version, int money = 0)
+		public Player(int number, int version, int money = 0)
 		{
 			Number = number;
-			IsAI = isAI;
+			IsAI = false;
 			Version = version;
 			Money = money;
 			Buildings = new List<Building>();

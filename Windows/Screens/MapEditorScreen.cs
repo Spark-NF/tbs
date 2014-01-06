@@ -28,10 +28,7 @@ namespace TBS.Screens
 		private Texture2D _backgroundTexture;
 		private SpriteFont _font, _fontDebug, _fontPopup;
 	    private Sprite _fontLife, _capturing;
-		private Vector2 _cursorPos, _curMovePath;
-		private Unit _selectedUnit;
-		private int _currentPlayer;
-		private int _turn;
+		private Vector2 _cursorPos;
 	    private readonly int _mapHeight, _mapWidth;
 
 		private Sprite _popupLeft, _popupMid, _popupRight, _popupLeftOn, _popupMidOn, _popupRightOn;
@@ -85,7 +82,7 @@ namespace TBS.Screens
 
 		    _players = new Player[plyers.Length];
 		    for (var i = 0; i < _players.Length; ++i)
-			    _players[i] = new Player(i + 1, false, Convert.ToInt32(plyers[i].Trim()));
+			    _players[i] = new Player(i + 1, Convert.ToInt32(plyers[i].Trim()));
 			var terrainLines = new string[_mapHeight];
 		    var read = 0;
 			for (var i = 7; i < _mapHeight + 7; ++i)
@@ -407,36 +404,13 @@ namespace TBS.Screens
 
 	        // Draw units
 	        foreach (var u in _units)
-	        {
-		        if (u == _selectedUnit)
-		        {
-			        var texture = _texturesUnitsBig[u.Type];
-					var pos = _gridWidth * u.Position - _camera - new Vector2(
-						(int)Math.Floor((double)(_gridWidth + texture.Width) / 2) - _gridWidth,
-						texture.Height - _gridHeight);
-			        texture.Draw(
-				        spriteBatch,
-				        u.Position.Y / 100f + 0.106f,
-						pos,
-				        3 * (u.Player.Version - 1),
-				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
-				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
-		        }
-		        else
-			        _texturesUnitsPreview[u.Type].Draw(
-				        spriteBatch,
-				        u.Position.Y / 100f + 0.106f,
-				        _gridWidth * u.Position - _camera,
-						u.Player.Version - 1,
-				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
-				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
-				if (u.Life <= 90)
-					_fontLife.Draw(
-						spriteBatch,
-						0.91f,
-						_gridWidth * u.Position - _camera + new Vector2(_gridWidth - 8, _gridHeight - 8),
-						(int)Math.Ceiling((double)u.Life / 10));
-	        }
+				_texturesUnitsPreview[u.Type].Draw(
+					spriteBatch,
+					u.Position.Y / 100f + 0.106f,
+					_gridWidth * u.Position - _camera,
+					u.Player.Version - 1,
+					Color.White,
+					u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
 
 	        // User Interface (15px per number)
 			

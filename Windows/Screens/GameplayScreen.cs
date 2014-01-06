@@ -100,8 +100,13 @@ namespace TBS.Screens
 
 		    _players = new Player[plyers.Length];
 		    for (var i = 0; i < _players.Length; ++i)
-			    _players[i] = new Player(i + 1, false, Convert.ToInt32(plyers[i].Trim()));
-			var terrainLines = new string[_mapHeight];
+		    {
+				if (i != 0)
+					_players[i] = new PlayerAI(i + 1, Convert.ToInt32(plyers[i].Trim()));
+				else
+					_players[i] = new Player(i + 1, Convert.ToInt32(plyers[i].Trim()));
+		    }
+		    var terrainLines = new string[_mapHeight];
 		    var read = 0;
 			for (var i = 7; i < _mapHeight + 7; ++i)
 		    {
@@ -358,7 +363,7 @@ namespace TBS.Screens
 					}
 					else if (selected == "Wait")
 					{
-						_selectedUnit.Move(_cursorPos);
+						_selectedUnit.Wait();
 						_availableMoves = new bool[_mapHeight, _mapWidth];
 						_selectedUnit = null;
 						_movePath = null;
@@ -845,6 +850,10 @@ namespace TBS.Screens
 
 	    private void NextTurn()
 	    {
+			// Clean units
+		    _units.RemoveAll(u => u.Life <= 0);
+
+			// Next player
 			_currentPlayer++;
 		    if (_currentPlayer > _players.Length)
 		    {
@@ -852,34 +861,47 @@ namespace TBS.Screens
 			    _turn++;
 		    }
 
+			// Update buildings capture count
 		    for (var y = 0; y < _mapHeight; ++y)
 				for (var x = 0; x < _mapWidth; ++x)
 					if (_mapBuildings[y, x] != null)
 						_mapBuildings[y, x].NextTurn();
 
+			// Heal units on friendly buildings
 			foreach (var u in _units.Where(u => 
 					u.Player.Number == _currentPlayer
 					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X] != null
-					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X].Player == u.Player))
+					&& _mapBuildings[(int)u.Position.Y, (int)u.Position.X].Player == u.Player
+					&& (_mapBuildings[(int)u.Position.Y, (int)u.Position.X].Type == u.Building
+					|| u.Building == "Factory")))
 				u.Heal();
 
-			_players[_currentPlayer - 1].NextTurn();
-			_showContextMenu = false;
+			// Next turn
+		    _players[_currentPlayer - 1].NextTurn();
+		    _showContextMenu = false;
+
+			// IA thinking
+		    if (_players[_currentPlayer - 1].IsAI)
+		    {
+			    var ai = _players[_currentPlayer - 1] as PlayerAI;
+			    if (ai == null)
+				    return;
+				ai.Think(_mapTerrains, _mapBuildings, _units);
+			    NextTurn();
+		    }
 	    }
 
 	    private void SetAvailableAttacks(Unit unit, bool other = false, bool real = true)
 		{
+			// Resets the array before filling it
 			if (other)
 				_availableAttacksOther = new int[_mapHeight, _mapWidth];
 			else
 				_availableAttacks = new int[_mapHeight, _mapWidth];
+
 			var pf = new AStar(_mapTerrains, _units, unit);
-			for (var y = (int)Math.Max(unit.Position.Y - unit.MovingDistance, 0);
-				y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapHeight - 1);
-				++y)
-				for (var x = (int)Math.Max(unit.Position.X - unit.MovingDistance, 0);
-					x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapWidth - 1);
-					++x)
+			for (var y = (int)Math.Max(unit.Position.Y - unit.MovingDistance, 0); y <= (int)Math.Min(unit.Position.Y + unit.MovingDistance, _mapHeight - 1); ++y)
+				for (var x = (int)Math.Max(unit.Position.X - unit.MovingDistance, 0); x <= (int)Math.Min(unit.Position.X + unit.MovingDistance, _mapWidth - 1); ++x)
 				{
 					var nodes = pf.FindPath(new Point((int)unit.Position.X, (int)unit.Position.Y), new Point(x, y));
 					if ((nodes == null || !nodes.Any()
@@ -894,7 +916,9 @@ namespace TBS.Screens
 					var xmax = Math.Min(x + unit.RangeMax, _mapWidth - 1);
 					for (var iy = ymin; iy <= ymax; ++iy)
 						for (var ix = xmin; ix <= xmax; ++ix)
-							if (Math.Abs(y - iy) + Math.Abs(x - ix) <= unit.RangeMax && Math.Abs(y - iy) + Math.Abs(x - ix) >= unit.RangeMin)
+						{
+							var diff = Math.Abs(y - iy) + Math.Abs(x - ix);
+							if (diff >= unit.RangeMin && diff <= unit.RangeMax)
 							{
 								var data = _units.Any(t =>
 									t.Player != unit.Player
@@ -907,6 +931,7 @@ namespace TBS.Screens
 								else
 									_availableAttacks[iy, ix] = data;
 							}
+						}
 				}
 	    }
     }
