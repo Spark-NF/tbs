@@ -5,7 +5,7 @@ namespace TBS
 {
 	public class GameStateManagementGame : Game
 	{
-		readonly GraphicsDeviceManager _graphics;
+		public GraphicsDeviceManager GraphicsDeviceManager;
 
 		// By preloading any assets used by UI rendering, we avoid framerate glitches
 		// when they suddenly need to be loaded in the middle of a menu transition.
@@ -21,7 +21,7 @@ namespace TBS
 		{
 			Content.RootDirectory = "Content";
 
-			_graphics = new GraphicsDeviceManager(this)
+			GraphicsDeviceManager = new GraphicsDeviceManager(this)
 			{
 				PreferredBackBufferWidth = 800,
 				PreferredBackBufferHeight = 480,
@@ -31,7 +31,7 @@ namespace TBS
 			IsFixedTimeStep = true;
 			IsMouseVisible = true;
 
-			// Create the screen manager component.
+			// Create the screen manager component
 			var screenManager = new ScreenManager.ScreenManager(this);
 			Components.Add(screenManager);
 
@@ -58,7 +58,7 @@ namespace TBS
 		/// </summary>
 		protected override void Draw(GameTime gameTime)
 		{
-			_graphics.GraphicsDevice.Clear(Color.Black);
+			GraphicsDeviceManager.GraphicsDevice.Clear(Color.Black);
 			base.Draw(gameTime);
 		}
 	}
