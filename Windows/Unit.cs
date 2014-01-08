@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework;
 
 namespace TBS
 {
-	class Unit
+	class Unit : Drawable
 	{
 		public enum MoveType
 		{

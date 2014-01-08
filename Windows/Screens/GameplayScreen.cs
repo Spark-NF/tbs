@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -295,7 +296,14 @@ namespace TBS.Screens
 				_texturesUnitsSmall.Values.ElementAt(i).Update(gameTime);
 			_cursor.Update(gameTime);
 
-			if (_isAnimating)
+			// Update moving animations
+			foreach (var u in _units)
+				if (u.UpdateAnimation(gameTime))
+				{
+					_isAnimating = false;
+					return;
+				}
+		    if (_isAnimating)
 			    return;
 
 		    // Context menu
@@ -326,6 +334,11 @@ namespace TBS.Screens
 					}
 					else if (selected == "Move")
 					{
+						var texture = _texturesUnitsBig[_selectedUnit.Type];
+						_selectedUnit.Animate(_gridWidth * _selectedUnit.Position - _camera - new Vector2(
+							(int)Math.Floor((double)(_gridWidth + texture.Width) / 2) - _gridWidth,
+							texture.Height - _gridHeight), 1000);
+						_isAnimating = true;
 						_selectedUnit.Move(_cursorPos);
 						_availableMoves = new bool[_mapHeight, _mapWidth];
 						_selectedUnit = null;
@@ -738,10 +751,11 @@ namespace TBS.Screens
 					var pos = _gridWidth * u.Position - _camera - new Vector2(
 						(int)Math.Floor((double)(_gridWidth + texture.Width) / 2) - _gridWidth,
 						texture.Height - _gridHeight);
-			        texture.Draw(
-				        spriteBatch,
-				        u.Position.Y / 100f + 0.106f,
+			        u.Draw(
+						texture,
+						spriteBatch,
 						pos,
+						u.Position.Y / 100f + 0.106f,
 				        3 * (u.Player.Version - 1),
 				        u.Moved && u.Player.Number == _currentPlayer ? new Color(.6f, .6f, .6f) : Color.White,
 				        u.Player.Number == 1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);

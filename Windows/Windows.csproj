@@ -38,6 +38,7 @@
     <Compile Include="AStar.cs" />
     <Compile Include="Building.cs" />
     <Compile Include="Clavier.cs" />
+    <Compile Include="Drawable.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="PlayerAI.cs" />
