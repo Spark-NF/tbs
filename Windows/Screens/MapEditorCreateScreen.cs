@@ -56,17 +56,18 @@ namespace TBS.Screens
 			Clavier.Get().GetText = true;
 			Clavier.Get().Text = _mapName;
 			Clavier.Get().TextEntered = SetMenuEntryText;
-			System.Diagnostics.Debug.WriteLine("Name selected");
 			SetMenuEntryText();
 		}
-		void MapNameMenuEntryUnfocus(object sender, PlayerIndexEventArgs e)
+
+		static void MapNameMenuEntryUnfocus(object sender, PlayerIndexEventArgs e)
 		{
 			Clavier.Get().GetText = false;
 		}
 
 		void SetMenuEntryText(object sender = null, PlayerIndexEventArgs e = null)
 		{
-			_mapName = Clavier.Get().Text;
+			if (Clavier.Get().GetText)
+				_mapName = Clavier.Get().Text;
 			_mapNameMenuEntry.Text = "Name: " + _mapName;
 			_mapWidthMenuEntry.Text = "Width: " + _mapWidth;
 			_mapHeightMenuEntry.Text = "Height: " + _mapHeight;

@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Linq;
+using System.Windows.Forms;
+using Microsoft.Xna.Framework;
 using TBS.Screens;
 
 namespace TBS
@@ -21,15 +23,31 @@ namespace TBS
 		{
 			Content.RootDirectory = "Content";
 
+			var manager = new Settings.SettingsManager();
+			var settings = manager.Load<Settings.GeneralSettings>();
+			System.Diagnostics.Debug.WriteLine("Fullscreen: " + settings.Fullscreen);
+			System.Diagnostics.Debug.WriteLine("Width: " + settings.Width);
+			System.Diagnostics.Debug.WriteLine("Height: " + settings.Height);
+
 			GraphicsDeviceManager = new GraphicsDeviceManager(this)
 			{
-				PreferredBackBufferWidth = 800,
-				PreferredBackBufferHeight = 480,
-				IsFullScreen = false,
+				PreferredBackBufferWidth = settings.Width,
+				PreferredBackBufferHeight = settings.Height,
+				IsFullScreen = settings.Fullscreen,
 				SynchronizeWithVerticalRetrace = false
 			};
 			IsFixedTimeStep = true;
 			IsMouseVisible = true;
+
+			if (settings.Fullscreen)
+			{
+				var screen = Screen.AllScreens.First(n => n.Primary);
+				Window.IsBorderless = true;
+				Window.Position = new Point(screen.Bounds.X, screen.Bounds.Y);
+				GraphicsDeviceManager.PreferredBackBufferWidth = screen.Bounds.Width;
+				GraphicsDeviceManager.PreferredBackBufferHeight = screen.Bounds.Height;
+				GraphicsDeviceManager.ApplyChanges();
+			}
 
 			// Create the screen manager component
 			var screenManager = new ScreenManager.ScreenManager(this);

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using System.Windows.Forms;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace TBS.Screens
 {
@@ -61,6 +60,17 @@ namespace TBS.Screens
 				|| (int)res.X == 800 && (int)res.Y == 600))
 				_resolutions.Add(res);
 
+			// Load settings
+			var manager = new Settings.SettingsManager();
+			var settings = manager.Load<Settings.GeneralSettings>();
+			_fullScreen = settings.Fullscreen;
+			if (_fullScreen)
+			{
+				_oldSize = new Vector2(
+					settings.Width,
+					settings.Height);
+			}
+
 			// Create our menu entries.
 			_languageMenuEntry = new MenuEntry(string.Empty);
 			_fullScreenMenuEntry = new MenuEntry(string.Empty);
@@ -72,13 +82,27 @@ namespace TBS.Screens
 			_languageMenuEntry.Selected += LanguageMenuEntrySelected;
 			_fullScreenMenuEntry.Selected += FullScreenMenuEntrySelected;
 			_resolutionMenuEntry.Selected += ResolutionMenuEntrySelected;
-			back.Selected += OnCancel;
+			back.Selected += BackMenuEntrySelected;
 			
 			// Add entries to the menu.
 			MenuEntries.Add(_languageMenuEntry);
 			MenuEntries.Add(_fullScreenMenuEntry);
 			MenuEntries.Add(_resolutionMenuEntry);
 			MenuEntries.Add(back);
+		}
+
+		void BackMenuEntrySelected(object sender, PlayerIndexEventArgs e)
+		{
+			// Save settings
+			var manager = new Settings.SettingsManager();
+			var settings = manager.Load<Settings.GeneralSettings>();
+			settings.Fullscreen = _fullScreen;
+			settings.Width = (int)_resolutions[_currentResolution].X;
+			settings.Height = (int)_resolutions[_currentResolution].Y;
+			manager.Save(settings);
+
+			// Go to previous menu
+			OnCancel(sender, e);
 		}
 
 		void LanguageMenuEntrySelected(object sender, PlayerIndexEventArgs e)

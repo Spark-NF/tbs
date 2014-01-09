@@ -62,6 +62,10 @@
     <Compile Include="Screens\OptionsMenuScreen.cs" />
     <Compile Include="Screens\PauseMenuScreen.cs" />
     <Compile Include="Screens\PlayerIndexEventArgs.cs" />
+    <Compile Include="Settings\GeneralSettings.cs" />
+    <Compile Include="Settings\Serializer.cs" />
+    <Compile Include="Settings\SettingsBase.cs" />
+    <Compile Include="Settings\SettingsManager.cs" />
     <Compile Include="Souris.cs" />
     <Compile Include="Sprite.cs" />
     <Compile Include="Static.cs" />
@@ -100,7 +104,9 @@
     </Content>
     <Content Include="Icon.ico" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Content\Settings\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Content\Buildings\Airport.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

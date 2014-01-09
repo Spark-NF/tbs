@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -23,7 +22,7 @@ namespace TBS.Screens
 
 		private const int CameraSpeed = 5;
 		private readonly Vector2 _nullCursor;
-	    private bool _isAnimating = false;
+	    private bool _isAnimating;
 
 	    private Sprite _cursor, _move, _attack;
 	    private int _gridWidth, _gridHeight;

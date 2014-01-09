@@ -15,6 +15,11 @@ namespace TBS
 
 		public void Think(Terrain[,] terrain, Building[,] allBuildings, List<Unit> allUnits)
 		{
+			foreach (var b in Buildings.Where(n => n.Type != "City" && n.Type != "Headquarter"))
+			{
+				
+			}
+
 			for (var i = 0; i < Units.Count; ++i)
 			{
 				var u = Units[i];
