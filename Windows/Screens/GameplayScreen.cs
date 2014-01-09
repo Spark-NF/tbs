@@ -301,12 +301,11 @@ namespace TBS.Screens
 			_cursor.Update(gameTime);
 
 			// Update moving animations
-			foreach (var u in _units)
-				if (u.UpdateAnimation(gameTime))
-				{
-					_isAnimating = false;
-					return;
-				}
+			if (_units.Any(u => u.UpdateAnimation(gameTime)))
+			{
+				_isAnimating = false;
+				return;
+			}
 		    if (_isAnimating)
 			    return;
 

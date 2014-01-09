@@ -91,9 +91,12 @@ namespace TBS.Screens
 		{
 			_currentResolution = (_currentResolution + 1) % _resolutions.Count;
 
-			_fullScreen = false;
-			Static.Game.Window.IsBorderless = false;
-			Static.Game.Window.Position = _oldPos;
+			if (_fullScreen)
+			{
+				_fullScreen = false;
+				Static.Game.Window.IsBorderless = false;
+				Static.Game.Window.Position = _oldPos;
+			}
 			Static.Game.GraphicsDeviceManager.PreferredBackBufferWidth = (int)_resolutions[_currentResolution].X;
 			Static.Game.GraphicsDeviceManager.PreferredBackBufferHeight = (int)_resolutions[_currentResolution].Y;
 			Static.Game.GraphicsDeviceManager.ApplyChanges();
