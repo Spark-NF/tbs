@@ -33,7 +33,7 @@ namespace TBS.Screens
 		private readonly Dictionary<string, Sprite> _texturesUnitsBig = new Dictionary<string, Sprite>();
 		private Texture2D _backgroundTexture;
 		private SpriteFont _font, _fontDebug, _fontPopup;
-	    private Sprite _fontLife, _capturing;
+	    private Sprite _fontLife, _capturing, _star;
 		private Vector2 _cursorPos, _curMovePath;
 		private Unit _selectedUnit;
 		private int _currentPlayer;
@@ -60,7 +60,7 @@ namespace TBS.Screens
 		private int _fpsFrameRate;
 		private int _fpsFrameCounter;
 		private TimeSpan _fpsElapsed = TimeSpan.Zero;
-		//private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
+		private readonly Dictionary<Color, Texture2D> _colors = new Dictionary<Color, Texture2D>();
 		private List<Node> _movePath;
 
 	    public GameplayScreen(string map)
@@ -230,7 +230,7 @@ namespace TBS.Screens
 	        };
 	        foreach (var u in units)
 			{
-				//_texturesUnitsSmall.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Small/" + u.Item2), 6, 3, 200));
+				_texturesUnitsSmall.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Small/" + u.Item2), 6, 3, 200));
 				_texturesUnitsPreview.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Preview/" + u.Item2), 2, 3, 400));
 				_texturesUnitsBig.Add(u.Item1, new Sprite(_content.Load<Texture2D>("Units/Big/" + u.Item2), 6, 3, 200));
 	        }
@@ -246,6 +246,7 @@ namespace TBS.Screens
 			_popupMidOn = new Sprite(_content.Load<Texture2D>("Popup/MidOn"));
 			_popupRight = new Sprite(_content.Load<Texture2D>("Popup/Right"));
 			_popupRightOn = new Sprite(_content.Load<Texture2D>("Popup/RightOn"));
+			_star = new Sprite(_content.Load<Texture2D>("Star"), 2);
 
 			GC.Collect();
             ScreenManager.Game.ResetElapsedTime();
@@ -776,6 +777,66 @@ namespace TBS.Screens
 						0.91f,
 						_gridWidth * u.Position - _camera + new Vector2(_gridWidth - 8, _gridHeight - 8),
 						(int)Math.Ceiling((double)u.Life / 10));
+			}
+
+			// Draw current case info
+	        if (_cursorPos != _nullCursor)
+	        {
+		        var unitUnder = _units.FirstOrDefault(t =>
+			        Math.Abs(t.Position.X - _cursorPos.X) < 0.1
+			        && Math.Abs(t.Position.Y - _cursorPos.Y) < 0.1);
+		        var terrainUnder = _mapTerrains[(int)_cursorPos.Y, (int)_cursorPos.X];
+				var buildingUnder = _mapBuildings[(int)_cursorPos.Y, (int)_cursorPos.X];
+		        var topy = graphics.Viewport.Height - 58;
+		        spriteBatch.Draw(
+			        Color2Texture2D(Color.Black),
+			        new Rectangle(0, topy, 140, 58),
+			        new Rectangle(0, 0, 1, 1),
+			        new Color(1, 1, 1, 0.4f),
+					0f,
+					Vector2.Zero,
+					SpriteEffects.None,
+					0.96f);
+
+				// Unit info
+		        if (unitUnder != null)
+		        {
+			        _texturesUnitsSmall[unitUnder.Type].Draw(
+						spriteBatch,
+						0.97f,
+						new Vector2(2, topy - 8),
+				        3*(unitUnder.Player.Version - 1),
+						Color.White,
+						SpriteEffects.FlipHorizontally);
+					spriteBatch.DrawString(_fontPopup, unitUnder.Type, new Vector2(34, topy + 2), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
+					spriteBatch.DrawString(_fontPopup, unitUnder.Type, new Vector2(34, topy + 2), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+		        }
+
+				// Terrain info
+				if (terrainUnder.Type == "Mist" || terrainUnder.Type == "BridgeSea")
+					_terrains[6].Texture.Draw(spriteBatch, 0.97f, new Vector2(4, topy + 30));
+				else if (terrainUnder.Type == "BridgeRiver")
+					_terrains[9].Texture.Draw(spriteBatch, 0.97f, new Vector2(4, topy + 30));
+				else if (terrainUnder.Type == "Road")
+					_terrains[0].Texture.Draw(spriteBatch, 0.97f, new Vector2(4, topy + 30));
+				terrainUnder.Texture.Draw(spriteBatch, 0.98f, new Vector2(4, topy + 30 + _gridHeight - terrainUnder.Texture.Height));
+
+				// Building sprite
+		        if (buildingUnder != null)
+				{
+					_texturesBuildings[buildingUnder.Type].Draw(spriteBatch, 0.99f, new Vector2(4, topy + 30 + +_gridHeight - _texturesBuildings[buildingUnder.Type].Height), buildingUnder.Player == null ? 0 : buildingUnder.Player.Version);
+					for (var i = 0; i < 4; ++i)
+						_star.Draw(spriteBatch, 0.99f, new Vector2(34 + 12 * i, topy + 44), 1);
+					spriteBatch.DrawString(_fontPopup, buildingUnder.Type, new Vector2(34, topy + 30), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
+					spriteBatch.DrawString(_fontPopup, buildingUnder.Type, new Vector2(34, topy + 30), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+		        }
+		        else
+				{
+					for (var i = 0; i < 4; ++i)
+						_star.Draw(spriteBatch, 0.99f, new Vector2(34 + 12 * i, topy + 44), i < terrainUnder.Defense ? 1 : 0);
+					spriteBatch.DrawString(_fontPopup, terrainUnder.Type, new Vector2(34, topy + 30), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
+					spriteBatch.DrawString(_fontPopup, terrainUnder.Type, new Vector2(34, topy + 30), Color.White, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+		        }
 	        }
 
 	        // User Interface (15px per number)
@@ -805,8 +866,8 @@ namespace TBS.Screens
 			// FPS Counter
 			_fpsFrameCounter++;
 			var str = string.Format("fps: {0} mem: {1} cam: ({2},{3}) trv: {4}", _fpsFrameRate, GC.GetTotalMemory(false), _camera.X, _camera.Y, _movePath != null && _movePath.Any() ? _movePath.Last().DistanceTraveled : -1);
-			spriteBatch.DrawString(_fontDebug, str, new Vector2(13, graphics.Viewport.Height - 27), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.999f);
-			spriteBatch.DrawString(_fontDebug, str, new Vector2(12, graphics.Viewport.Height - 28), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+			spriteBatch.DrawString(_fontDebug, str, new Vector2(graphics.Viewport.Width / 2f, graphics.Viewport.Height - 27), Color.Black, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.999f);
+			spriteBatch.DrawString(_fontDebug, str, new Vector2(graphics.Viewport.Width / 2f - 1, graphics.Viewport.Height - 28), Color.Orange, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
 
 			// Cursor
 			if (_cursorPos != _nullCursor)
@@ -819,7 +880,7 @@ namespace TBS.Screens
 				ScreenManager.FadeBackBufferToBlack(MathHelper.Lerp(1f - TransitionAlpha, 1f, _pauseAlpha / 2));
         }
 
-		/*private Texture2D Color2Texture2D(Color color)
+		private Texture2D Color2Texture2D(Color color)
 		{
 			if (!_colors.ContainsKey(color))
 				_colors.Add(color, CreateRectangle(1, 1, color));
@@ -837,7 +898,7 @@ namespace TBS.Screens
 	    private Texture2D CreateRectangle(int width, int height, Color col)
 	    {
 		    return CreateRectangle(width, height, col, col);
-	    }*/
+	    }
 
 		/*private Rectangle ContextMenuRect(int dec = 0, Vector2? camera = null)
 	    {

@@ -25,9 +25,6 @@ namespace TBS
 
 			var manager = new Settings.SettingsManager();
 			var settings = manager.Load<Settings.GeneralSettings>();
-			System.Diagnostics.Debug.WriteLine("Fullscreen: " + settings.Fullscreen);
-			System.Diagnostics.Debug.WriteLine("Width: " + settings.Width);
-			System.Diagnostics.Debug.WriteLine("Height: " + settings.Height);
 
 			GraphicsDeviceManager = new GraphicsDeviceManager(this)
 			{

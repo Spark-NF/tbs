@@ -25,7 +25,6 @@ namespace TBS.Settings
 		{
 			try
 			{
-				System.Diagnostics.Debug.WriteLine("Load: " + Directory + name + Extension);
 				return Serializer.Read<T>(
 					Directory +
 					name +
