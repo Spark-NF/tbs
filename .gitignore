@@ -3,6 +3,7 @@
 *.db
 *.suo
 *.xnb
+*.pdb
 /ContentProject/bin
 /ContentProject/obj
 /Content/bin
